@@ -39,6 +39,7 @@ async function getPlayers() {
 	try {
 		const response = await db.query('SELECT id FROM teams');
 		const teams = response.rows;
+		console.log(`TEAMS: ${teams}`);
 		for (let team of teams) {
 			console.log(`TEAM_ID: ${team.id}`);
 			let URL = BASE_URL + `players?team=${team.id}&season=2023`;
@@ -51,7 +52,7 @@ async function getPlayers() {
 				if (player.height.feets === null) {
 					height = 'Unknown';
 				} else if (player.height.feets && (player.height.inches === null || player.height.inces == 0)) {
-					height = player.height.feets + 'ft.';
+					height = player.height.feets + `'0"`;
 				} else {
 					height = player.height.feets + "'" + player.height.inches + '"';
 				}
@@ -60,21 +61,27 @@ async function getPlayers() {
 				} else {
 					weight = player.weight.pounds + ' lbs.';
 				}
-				db.query(
-					'INSERT INTO players (id, first_name, last_name, birthday, height, weight, college, number, position, team_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-					[
-						player.id,
-						player.firstname,
-						player.lastname,
-						player.birth.date,
-						height,
-						weight,
-						player.college,
-						player.leagues.standard.jersey,
-						player.leagues.standard.pos,
-						team.id,
-					]
-				);
+				// check database for player (duplicates occur due to trades)
+				const isDuplicate = await db.query(`SELECT id FROM players WHERE id = $1`, [player.id]);
+				if (isDuplicate.rows.length > 0) {
+					console.log(`------- DUPLICATE: ${player.id} -------`);
+				} else {
+					db.query(
+						'INSERT INTO players (id, first_name, last_name, birthday, height, weight, college, number, position, team_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+						[
+							player.id,
+							player.firstname,
+							player.lastname,
+							player.birth.date,
+							height,
+							weight,
+							player.college,
+							player.leagues.standard.jersey,
+							player.leagues.standard.pos,
+							team.id,
+						]
+					);
+				}
 			}
 		}
 	} catch (err) {
@@ -82,4 +89,3 @@ async function getPlayers() {
 	}
 }
 
-getPlayers();
