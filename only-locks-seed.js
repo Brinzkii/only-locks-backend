@@ -89,3 +89,87 @@ async function getPlayers() {
 	}
 }
 
+async function getGames() {
+	try {
+		let URL = BASE_URL + 'games?league=standard&season=2023';
+		const response = await axios.get(URL, { headers });
+		let games = response.data.response;
+		for (let game of games) {
+			// check if score exists and save in string format
+			let score = null;
+			if (game.scores.home.points && game.scores.visitors.points) {
+				score = `${game.scores.home.points} - ${game.scores.visitors.points}`;
+			}
+
+			// check if both teams are in NBA before adding game to db
+			let isNba = await db.query('SELECT * FROM teams WHERE id=$1 OR id=$2', [
+				game.teams.home.id,
+				game.teams.visitors.id,
+			]);
+			if (isNba.rows.length === 2) {
+				db.query(
+					'INSERT INTO games (id, date, location, home_team, away_team, clock, score) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+					[
+						game.id,
+						game.date.start.slice(0, 10),
+						game.arena.name + ` (${game.arena.city})`,
+						game.teams.home.id,
+						game.teams.visitors.id,
+						game.status.clock,
+						score,
+					]
+				);
+
+				console.log(`Game(${game.id}) has been added!`);
+			}
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+
+async function getTeamStats() {
+	try {
+		const response = await db.query('SELECT id from teams');
+		let teams = response.rows;
+		for (let team of teams.slice(10, 15)) {
+			let URL = BASE_URL + `teams/statistics?id=${team.id}&season=2023`;
+			const response = await axios.get(URL, { headers });
+			let teamStats = response.data.response;
+			for (let ts of teamStats) {
+				db.query(
+					'INSERT INTO team_stats (team_id, games, fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)',
+					[
+						team.id,
+						ts.games,
+						ts.fastBreakPoints,
+						ts.pointsInPaint,
+						ts.secondChancePoints,
+						ts.pointsOffTurnovers,
+						ts.points,
+						ts.fgm,
+						ts.fga,
+						ts.fgp,
+						ts.ftm,
+						ts.fta,
+						ts.ftp,
+						ts.tpm,
+						ts.tpa,
+						ts.tpp,
+						ts.offReb,
+						ts.defReb,
+						ts.assists,
+						ts.pFouls,
+						ts.steals,
+						ts.turnovers,
+						ts.blocks,
+						ts.plusMinus,
+					]
+				);
+			}
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+

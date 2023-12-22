@@ -28,8 +28,24 @@ CREATE TABLE players (
         REFERENCES teams ON DELETE CASCADE
 );
 
+CREATE TABLE followed_teams (
+    id SERIAL PRIMARY KEY,
+    username TEXT
+        REFERENCES users ON DELETE CASCADE,
+    team_id INTEGER 
+        REFERENCES teams ON DELETE CASCADE
+);
+
+CREATE TABLE followed_players (
+    id SERIAL PRIMARY KEY,
+    username TEXT
+        REFERENCES users ON DELETE CASCADE,
+    player_id INTEGER 
+        REFERENCES players ON DELETE CASCADE
+)
+
 CREATE TABLE team_stats (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     team_id INTEGER
         REFERENCES teams ON DELETE CASCADE,
     games INTEGER NOT NULL,
@@ -40,10 +56,13 @@ CREATE TABLE team_stats (
     points INTEGER NOT NULL,
     fgm INTEGER NOT NULL,
     fga INTEGER NOT NULL,
+    fgp TEXT NOT NULL,
     ftm INTEGER NOT NULL,
     fta INTEGER NOT NULL,
+    ftp TEXT NOT NULL,
     tpm INTEGER NOT NULL,
     tpa INTEGER NOT NULL,
+    tpp TEXT NOT NULL,
     off_reb INTEGER NOT NULL,
     def_reb INTEGER NOT NULL,
     assists INTEGER NOT NULL,
@@ -55,16 +74,19 @@ CREATE TABLE team_stats (
 );
 
 CREATE TABLE season_stats (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     player_id INTEGER 
         REFERENCES players ON DELETE CASCADE,
     points INTEGER NOT NULL,
     fgm INTEGER NOT NULL,
     fga INTEGER NOT NULL,
+    fgp TEXT NOT NULL,
     ftm INTEGER NOT NULL,
     fta INTEGER NOT NULL,
+    ftp TEXT NOT NULL,
     tpm INTEGER NOT NULL,
     tpa INTEGER NOT NULL,
+    tpp TEXT NOT NULL,
     off_reb INTEGER NOT NULL,
     def_reb INTEGER NOT NULL,
     assists INTEGER NOT NULL,
@@ -83,12 +105,12 @@ CREATE TABLE games (
         REFERENCES teams ON DELETE CASCADE,
     away_team INTEGER
         REFERENCES teams ON DELETE CASCADE,
-    clock TEXT NOT NULL,
-    score TEXT NOT NULL
+    clock TEXT,
+    score TEXT
 );
 
 CREATE TABLE game_stats (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     player_id INTEGER 
         REFERENCES players ON DELETE CASCADE,
     game_id INTEGER
@@ -97,10 +119,13 @@ CREATE TABLE game_stats (
     points INTEGER NOT NULL,
     fgm INTEGER NOT NULL,
     fga INTEGER NOT NULL,
+    fgp TEXT NOT NULL,
     ftm INTEGER NOT NULL,
     fta INTEGER NOT NULL,
+    ftp TEXT NOT NULL,
     tpm INTEGER NOT NULL,
     tpa INTEGER NOT NULL,
+    tpp TEXT NOT NULL,
     off_reb INTEGER NOT NULL,
     def_reb INTEGER NOT NULL,
     assists INTEGER NOT NULL,
