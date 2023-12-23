@@ -1,8 +1,10 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const { NotFoundError, BadRequestError, UnauthorizedError } = require('../expressError');
+const Team = require('./team.js');
+const Player = require('./player');
 
 const { BCRYPT_WORK_FACTOR } = require('../config.js');
-const { NotFoundError } = require('../../../react-jobly/backend/expressError');
 
 /** Related functions for users. */
 
@@ -74,8 +76,10 @@ class User {
 	/** Given a username, return data about user.
 	 *
 	 * Returns { username, followedTeams, followedPlayers }
-	 *   where followedTeams is [team_id, team_id, ...]
-	 *   where followedPlayers is [player_id, player_id, ...]
+	 *   where followedTeams is [ { id, code, nickname, name, city, logo,
+	 *                              conference, division } ]
+	 *   where followedPlayers is [ { id, firstName, lastName, birthday, height,
+	 *                               weight, college, number, position, team } ]
 	 *
 	 * Throws NotFoundError if user not found.
 	 **/
@@ -92,23 +96,27 @@ class User {
 
 		if (!user) throw new NotFoundError(`No user: ${username}`);
 
-		const userFavTeams = await db.query(
-			`SELECT t.team_id
-            FROM followed_teams AS t
-            WHERE t.username = $1`,
+		const userFavTeamIds = await db.query(
+			`SELECT team_id AS id
+            FROM followed_teams
+            WHERE username = $1`,
 			[username]
 		);
 
-		user.followedTeams = userFavTeams.rows.map((t) => t.team_id);
+		const userFavTeams = userFavTeamIds.map(async (t) => await Team.get(t.id));
 
-		const userFavPlayers = await db.query(
-			`SELECT p.player_id
-            FROM followed_players AS p
-            WHERE p.username = $1`,
+		user.followedTeams = userFavTeams;
+
+		const userFavPlayerIds = await db.query(
+			`SELECT player_id AS id
+            FROM followed_players
+            WHERE username = $1`,
 			[username]
 		);
 
-		user.followedPlayers = userFavPlayers.rows.map((p) => p.player_id);
+		const userFavPlayers = userFavTeamIds.map(async (p) => await Player.get(p.id));
+
+		user.followedPlayers = userFavPlayers;
 
 		return user;
 	}
@@ -144,7 +152,7 @@ class User {
                 AND team_id = $2`,
 				[username, team_id]
 			);
-			// If no entry found with matching username and team_id, add to db. Otherwise remove entry from followed_teams table
+			// If no entry found with matching username and team_id, add to db.
 			if (!checkFollowedTeams.rows[0]) {
 				await db.query(
 					`INSERT INTO followed_teams
@@ -152,6 +160,7 @@ class User {
                     VALUES ($1, $2)`,
 					[username, team_id]
 				);
+				// Otherwise remove entry from followed_teams table
 			} else {
 				await db.query(
 					`DELETE FROM followed_teams
@@ -160,15 +169,6 @@ class User {
 					[username, team_id]
 				);
 			}
-
-			const userFavTeams = await db.query(
-				`SELECT t.team_id
-                FROM followed_teams AS t
-                WHERE t.username = $1`,
-				[username]
-			);
-
-			user.followedTeams = userFavTeams.rows.map((t) => t.team_id);
 			// work with player_id if one was passed
 		} else {
 			const checkFollowedPlayers = await db.query(
@@ -178,7 +178,7 @@ class User {
                 AND player_id = $2`,
 				[username, team_id]
 			);
-			// If no entry found with matching username and player_id, add to db. Otherwise remove entry from followed_players table
+			// If no entry found with matching username and player_id, add to db.
 			if (!checkFollowedPlayers.rows[0]) {
 				await db.query(
 					`INSERT INTO followed_players
@@ -186,6 +186,7 @@ class User {
                     VALUES ($1, $2)`,
 					[username, player_id]
 				);
+				// Otherwise remove entry from followed_players table
 			} else {
 				await db.query(
 					`DELETE FROM followed_players
@@ -194,16 +195,10 @@ class User {
 					[username, player_id]
 				);
 			}
-
-			const userFavPlayers = await db.query(
-				`SELECT p.player_id
-                FROM followed_players AS p
-                WHERE p.username = $1`,
-				[username]
-			);
-
-			user.followedPlayers = userFavPlayers.rows.map((p) => p.player_id);
 		}
-		return user;
+		const updatedUser = await this.get(username);
+		return updatedUser;
 	}
 }
+
+module.exports = User;
