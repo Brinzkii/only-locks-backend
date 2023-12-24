@@ -36,6 +36,24 @@ class Player {
 		return player;
 	}
 
+	/** Return data about all players.
+	 *
+	 *  Returns [ { player }, { player }, ... ]
+	 *
+	 *  Where player is { id, firstName, lastName, birthday, height,
+	 *            		  weight, college, number, position, team }
+	 *
+	 **/
+
+	static async getAll() {
+		const playersRes = await db.query(
+			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position, team_id AS teamId
+			FROM players`
+		);
+
+		return playersRes.rows;
+	}
+
 	/** Given a player_id, return season stats for player
 	 *
 	 *  Returns { points, fgm, fga, fgp, ftm, fta, ftp, tpm,

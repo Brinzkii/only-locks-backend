@@ -27,10 +27,24 @@ class Team {
 		return team;
 	}
 
+	/** Return information about all teams
+	 *
+	 * 	Returns [ { team }, { team } ]
+	 **/
+
+	static async getAll() {
+		const teamsRes = await db.query(
+			`SELECT id, code, nickname, name, city, logo, conference, division
+			FROM teams`
+		);
+
+		return teamsRes.rows;
+	}
+
 	/** Given a team_id, return all players on team
 	 *
 	 *  Returns [ { id, firstName, lastName, birthday, height,
-	 *              weight, college, number, position }]
+	 *              weight, college, number, position } ]
 	 *
 	 *  Throws NotFoundError if not found
 	 **/
@@ -45,7 +59,7 @@ class Team {
 
 		const players = playersRes.rows;
 
-		if (players) throw new NotFoundError(`No players found on team: ${id}`);
+		if (!players) throw new NotFoundError(`No players found on team: ${id}`);
 
 		return players;
 	}
@@ -65,8 +79,8 @@ class Team {
 			`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
             FROM games
             WHERE home_team = $1
-            OR away_team = $1`,
-			[id]
+            OR away_team = $2`,
+			[id, id]
 		);
 
 		const games = gamesRes.rows;
@@ -75,10 +89,10 @@ class Team {
 
 		// get full home and away team data for each game
 		for (let game of games) {
-			const homeTeam = await this.get(game.homeTeam);
-			const awayTeam = await this.get(game.awayTeam);
-			delete homeTeam.players;
-			delete awayTeam.players;
+			const homeTeam = await this.get(game.hometeam);
+			const awayTeam = await this.get(game.awayteam);
+			delete game.hometeam;
+			delete game.awayteam;
 			game.homeTeam = homeTeam;
 			game.awayTeam = awayTeam;
 		}

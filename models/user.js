@@ -103,7 +103,12 @@ class User {
 			[username]
 		);
 
-		const userFavTeams = userFavTeamIds.map(async (t) => await Team.get(t.id));
+		let userFavTeams = [];
+
+		for (let team of userFavTeamIds.rows) {
+			const teamInfo = await Team.get(team.id);
+			userFavTeams.push(teamInfo);
+		}
 
 		user.followedTeams = userFavTeams;
 
@@ -114,7 +119,12 @@ class User {
 			[username]
 		);
 
-		const userFavPlayers = userFavTeamIds.map(async (p) => await Player.get(p.id));
+		let userFavPlayers = [];
+
+		for (let player of userFavPlayerIds.rows) {
+			const playerInfo = await Player.get(player.id);
+			userFavPlayers.push(playerInfo);
+		}
 
 		user.followedPlayers = userFavPlayers;
 
@@ -131,7 +141,7 @@ class User {
 	 *  Throws NotFoundError if user not found.
 	 **/
 
-	static async toggleFollow(username, player_id = null, team_id = null) {
+	static async toggleFollow(username, playerId = null, teamId = null) {
 		const userRes = await db.query(
 			`SELECT username
             FROM users
@@ -144,13 +154,13 @@ class User {
 		if (!user) throw new NotFoundError(`No user: ${username}`);
 
 		// If no player_id passed, work with team_id
-		if (!player_id) {
+		if (!playerId) {
 			const checkFollowedTeams = await db.query(
 				`SELECT team_id 
                 FROM followed_teams
                 WHERE username = $1
                 AND team_id = $2`,
-				[username, team_id]
+				[username, teamId]
 			);
 			// If no entry found with matching username and team_id, add to db.
 			if (!checkFollowedTeams.rows[0]) {
@@ -158,7 +168,7 @@ class User {
 					`INSERT INTO followed_teams
                     (username, team_id)
                     VALUES ($1, $2)`,
-					[username, team_id]
+					[username, teamId]
 				);
 				// Otherwise remove entry from followed_teams table
 			} else {
@@ -166,17 +176,17 @@ class User {
 					`DELETE FROM followed_teams
                     WHERE username = $1
                     AND team_id = $2`,
-					[username, team_id]
+					[username, teamId]
 				);
 			}
-			// work with player_id if one was passed
+			// work with playerId if one was passed
 		} else {
 			const checkFollowedPlayers = await db.query(
 				`SELECT player_id 
                 FROM followed_players
                 WHERE username = $1
                 AND player_id = $2`,
-				[username, team_id]
+				[username, teamId]
 			);
 			// If no entry found with matching username and player_id, add to db.
 			if (!checkFollowedPlayers.rows[0]) {
@@ -184,7 +194,7 @@ class User {
 					`INSERT INTO followed_players
                     (username, player_id)
                     VALUES ($1, $2)`,
-					[username, player_id]
+					[username, playerId]
 				);
 				// Otherwise remove entry from followed_players table
 			} else {
@@ -192,7 +202,7 @@ class User {
 					`DELETE FROM followed_players
                     WHERE username = $1
                     AND player_id = $2`,
-					[username, player_id]
+					[username, playerId]
 				);
 			}
 		}

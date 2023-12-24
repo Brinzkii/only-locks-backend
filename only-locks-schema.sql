@@ -42,7 +42,7 @@ CREATE TABLE followed_players (
         REFERENCES users ON DELETE CASCADE,
     player_id INTEGER 
         REFERENCES players ON DELETE CASCADE
-)
+);
 
 CREATE TABLE team_stats (
     id SERIAL PRIMARY KEY,
