@@ -20,7 +20,7 @@ class Player {
 
 	static async get(id) {
 		const playerRes = await db.query(
-			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position, team_id AS teamId
+			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position, team_id
             FROM players
             WHERE id = $1`,
 			[id]
@@ -30,7 +30,7 @@ class Player {
 
 		if (!player) throw new NotFoundError(`No player: ${id}`);
 
-		const team = await Team.get(player.teamId);
+		const team = await Team.get(player.team_id);
 		player.team = team;
 
 		return player;
