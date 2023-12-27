@@ -8,19 +8,21 @@ const Team = require('./team');
 class Game {
 	/** Given a game_id, returns data about game
 	 *
-	 *  Returns { id, date, location, homeTeam, awayTeam, clock, score }
+	 *  Returns { id, date, location, hometeam_id, hometeam_name,
+	 *            hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+	 * 			  awayteam_code, awayteam_logo, clock, score }
 	 *
-	 *  Where homeTeam and awayTeam are { id, code, nickname, name, city, logo,
-	 *                                    conference, division }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
 
 	static async get(id) {
 		const gameRes = await db.query(
-			`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
-            FROM games
-            WHERE id = $1`,
+			`SELECT g.id, g.date, g.location, t1.id AS hometeam_id, t1.name AS hometeam_name, t1.code AS hometeam_code, t1.logo AS hometeam_logo, t2.id AS awayteam_id, t2.name AS awayteam_name, t2.code AS awayteam_code, t1.logo AS awayteam_logo, g.clock, g.score
+            FROM games g
+			JOIN teams t1 ON g.home_team = t1.id
+			JOIN teams t2 ON g.away_team = t2.id
+            WHERE g.id = $1`,
 			[id]
 		);
 
@@ -28,25 +30,24 @@ class Game {
 
 		if (!game) throw new NotFoundError(`No game found: ${id}`);
 
-		const homeTeam = await Team.get(game.hometeam);
-		const awayTeam = await Team.get(game.awayteam);
-		game.homeTeam = homeTeam;
-		game.awayTeam = awayTeam;
-
 		return game;
 	}
 
 	/** Returns all NBA games
 	 *
-	 *  Returns { id, date, location, homeTeam, awayTeam, clock, score }
+	 *  Returns { id, date, location, hometeam_id, hometeam_name,
+	 *            hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+	 * 			  awayteam_code, awayteam_logo, clock, score }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
 
 	static async getAll() {
 		const gamesRes = await db.query(
-			`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
-            FROM games`
+			`SELECT g.id, g.date, g.location, t1.id AS hometeam_id, t1.name AS hometeam_name, t1.code AS hometeam_code, t1.logo AS hometeam_logo, t2.id AS awayteam_id, t2.name AS awayteam_name, t2.code AS awayteam_code, t1.logo AS awayteam_logo, g.clock, g.score
+            FROM games g
+			JOIN teams t1 ON g.home_team = t1.id
+			JOIN teams t2 ON g.away_team = t2.id`
 		);
 
 		const games = gamesRes.rows;
@@ -60,10 +61,10 @@ class Game {
 	 *
 	 * 	Returns [ { game } ]
 	 *
-	 *  Where game is { id, date, location, homeTeam, awayTeam, clock, score }
-	 *
-	 *  Where homeTeam and awayTeam are { id, code, nickname, name, city, logo,
-	 *                                    conference, division }
+	 *  Where game is { id, date, location, hometeam_id, hometeam_name,
+	 *                  hometeam_code, hometeam_logo, awayteam_id,
+	 *                  awayteam_name, awayteam_code, awayteam_logo, clock,
+	 * 					score }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
@@ -76,26 +77,32 @@ class Game {
 
 		if (teamId && date) {
 			gamesRes = await db.query(
-				`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
-				FROM games
-				WHERE home_team = $1
-				OR away_team = $1
-				AND date = $2`,
+				`SELECT g.id, g.date, g.location, t1.id AS hometeam_id, t1.name AS hometeam_name, t1.code AS hometeam_code, t1.logo AS hometeam_logo, t2.id AS awayteam_id, t2.name AS awayteam_name, t2.code AS awayteam_code, t1.logo AS awayteam_logo, g.clock, g.score
+				FROM games g
+				JOIN teams t1 ON g.home_team = t1.id
+				JOIN teams t2 ON g.away_team = t2.id
+				WHERE g.home_team = $1
+				OR g.away_team = $1
+				AND g.date = $2`,
 				[teamId, date]
 			);
 		} else if (teamId && !date) {
 			gamesRes = await db.query(
-				`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
-				FROM games
-				WHERE home_team = $1
-				OR away_team = $1`,
+				`SELECT g.id, g.date, g.location, t1.id AS hometeam_id, t1.name AS hometeam_name, t1.code AS hometeam_code, t1.logo AS hometeam_logo, t2.id AS awayteam_id, t2.name AS awayteam_name, t2.code AS awayteam_code, t1.logo AS awayteam_logo, g.clock, g.score
+				FROM games g
+				JOIN teams t1 ON g.home_team = t1.id
+				JOIN teams t2 ON g.away_team = t2.id
+				WHERE g.home_team = $1
+				OR g.away_team = $1`,
 				[teamId]
 			);
 		} else {
 			gamesRes = await db.query(
-				`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
-				FROM games
-				WHERE date = $1`,
+				`SELECT g.id, g.date, g.location, t1.id AS hometeam_id, t1.name AS hometeam_name, t1.code AS hometeam_code, t1.logo AS hometeam_logo, t2.id AS awayteam_id, t2.name AS awayteam_name, t2.code AS awayteam_code, t1.logo AS awayteam_logo, g.clock, g.score
+				FROM games g
+				JOIN teams t1 ON g.home_team = t1.id
+				JOIN teams t2 ON g.away_team = t2.id
+				WHERE g.date = $1`,
 				[date]
 			);
 		}
@@ -109,3 +116,4 @@ class Game {
 }
 
 module.exports = Game;
+

@@ -9,20 +9,19 @@ const Game = require('./game');
 class Player {
 	/** Given a player_id, return data about that player.
 	 *
-	 *  Returns { id, firstName, lastName, birthday, height,
-	 *            weight, college, number, position, team }
-	 *
-	 *  Where team is { id, code, nickname, name, city, logo, conference,
-	 *                  division }
+	 *  Returns { id, firstName, lastName, team_id, team_name, team_conference,
+	 * 			  team_division, team_logo, birthday, height, weight, college, number,
+	 * 			  position }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
 
 	static async get(id) {
 		const playerRes = await db.query(
-			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position, team_id
-            FROM players
-            WHERE id = $1`,
+			`SELECT p.id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+            FROM players p
+			JOIN teams t ON p.team_id = t.id
+            WHERE p.id = $1`,
 			[id]
 		);
 
@@ -40,15 +39,17 @@ class Player {
 	 *
 	 *  Returns [ { player }, { player }, ... ]
 	 *
-	 *  Where player is { id, firstName, lastName, birthday, height,
-	 *            		  weight, college, number, position, team }
+	 *  Where player is { id, firstName, lastName, team_id, team_name,
+	 * 					  team_conference, team_division, team_logo, birthday,
+	 * 					  height, weight, college, number, position }
 	 *
 	 **/
 
 	static async getAll() {
 		const playersRes = await db.query(
-			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position, team_id AS teamId
-			FROM players`
+			`SELECT p.id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+            FROM players p
+			JOIN teams t ON p.team_id = t.id`
 		);
 
 		return playersRes.rows;
@@ -56,7 +57,7 @@ class Player {
 
 	/** Given a player_id, return season stats for player
 	 *
-	 *  Returns { points, fgm, fga, fgp, ftm, fta, ftp, tpm,
+	 *  Returns { player_id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
 	 *            tpa, tpp, offReb, defReb, assists, fouls,
 	 *            steals, turnovers, blocks, plusMinus }
 	 *
@@ -66,42 +67,43 @@ class Player {
 	static async seasonStats(id) {
 		const player = await this.get(id);
 		const playerStatsRes = await db.query(
-			`SELECT points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb AS offReb, def_reb AS defReb, assists, fouls, steals, turnovers, blocks, plus_minus AS plusMinus
-            FROM season_stats
-            WHERE player_id = $1`,
+			`SELECT p.id AS player_id, p.name AS name, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+            FROM season_stats s
+			JOIN players p ON s.player_id = p.id
+            WHERE s.player_id = $1`,
 			[id]
 		);
 
 		const seasonStats = playerStatsRes.rows[0];
 
-		if (!seasonStats) throw new NotFoundError(`No stats for player: ${id}`);
+		if (!seasonStats) throw new NotFoundError(`No season stats for player: ${id}`);
 
-		seasonStats.player = { id: player.id, name: player.name };
 		return seasonStats;
 	}
 
 	/** Given a player_id and game_id, return game stats for player
 	 *
-	 *  Returns { player, game, minutes, points, fgm, fga, fgp, ftm, fta,
-	 *            ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals
-	 *            turnovers, blocks }
+	 *  Returns { player_id, player_name, game, minutes, points, fgm, fga, fgp,
+	 * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
+	 * 			  steals, turnovers, blocks }
 	 *
-	 *  Where player is { id, name }
+	 *  Where game is { id, date, location, hometeam_id, hometeam_name,
+	 *                  hometeam_code, hometeam_logo, awayteam_id,
+	 * 					awayteam_name, awayteam_code, awayteam_logo, clock,
+	 *  				score }
 	 *
-	 *  Where game is { id, date, location, homeTeam, awayTeam, clock, score }
-	 *
+	 * 	Throws NotFoundError if not found.
 	 **/
 
 	static async gameStats(playerId, gameId) {
 		if (!playerId || !gameId) throw new BadRequestError('Must include a player ID and game ID to get game stats!');
 
-		const player = await this.get(playerId);
-		const game = await Game.get(gameId);
 		const gameStatsRes = await db.query(
-			`SELECT minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb AS offReb, def_reb AS defReb, assists, fouls, steals, turnovers, blocks
-            FROM game_stats
-            WHERE player_id = $1
-            AND game_id = $2`,
+			`SELECT p.id AS player_id, p.name AS player_name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
+            FROM game_stats g
+			JOIN players p ON g.player_id = p.id
+            WHERE g.player_id = $1
+            AND g.game_id = $2`,
 			[playerId, gameId]
 		);
 
@@ -109,9 +111,8 @@ class Player {
 
 		if (!gameStats) throw new NotFoundError(`No game stats for player: ${playerId} | game: ${gameId}`);
 
-		gameStats.player = { id: player.id, name: player.name };
-		gameStats.homeTeam = { id: game.homeTeam.id, name: game.homeTeam.name };
-		gameStats.awayTeam = { id: game.awayTeam.id, name: game.awayTeam.name };
+		const game = await Game.get(gameId);
+		gameStats.game = game;
 
 		return gameStats;
 	}

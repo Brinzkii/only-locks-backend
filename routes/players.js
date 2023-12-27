@@ -11,11 +11,9 @@ const router = express.Router();
 /** GET / => { players }
  *
  * Returns [ { player }, { player }, ...]
- *      Where player is { id, firstName, lastName, birthday, height,
- *            weight, college, number, position, team }
- *
- *      Where team is { id, code, nickname, name, city, logo, conference,
- *                  division }
+ *      Where player is { id, firstName, lastName, team_id, team_name, 
+ * 						  team_conference, team_division, team_logo, birthday, 
+ * 						  height, weight, college, number, position }
  *
  * Authorization required: must be logged in
  **/
@@ -31,11 +29,9 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 
 /** GET /[playerId] => { player }
  *
- *  Returns { id, firstName, lastName, birthday, height,
- *            weight, college, number, position, team }
- *
- *      Where team is { id, code, nickname, name, city, logo, conference,
- *                  division }
+ *  Returns { id, firstName, lastName, team_id, team_name, 
+ * 			  team_conference, team_division, team_logo, birthday, 
+ * 			  height, weight, college, number, position }
  *
  *  Authorization required: must be logged in
  **/
@@ -51,7 +47,7 @@ router.get('/:playerId', authenticateJWT, ensureLoggedIn, async function (req, r
 
 /** GET /[playerId]/stats/season => { seasonStats }
  *
- *	Returns { points, fgm, fga, fgp, ftm, fta, ftp, tpm,
+ *	Returns { player_id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
  *            tpa, tpp, offReb, defReb, assists, fouls,
  *            steals, turnovers, blocks, plusMinus }
  *
@@ -69,13 +65,14 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 
 /** GET /[playerId]/stats/game/[gameId] => { gameStats }
  *
- *	Returns { player, game, minutes, points, fgm, fga, fgp, ftm, fta,
- *            ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals
- *            turnovers, blocks }
+ *	Returns { player_id, player_name, game, minutes, points, fgm, fga, fgp,
+ * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
+ * 			  steals, turnovers, blocks }
  *
- *  Where player is { id, name }
- *
- *  Where game is { id, date, location, homeTeam, awayTeam, clock, score }
+ *  Where game is { id, date, location, hometeam_id, hometeam_name,
+ *                  hometeam_code, hometeam_logo, awayteam_id,
+ * 					awayteam_name, awayteam_code, awayteam_logo, clock,
+ *  				score }
  *
  *  Authorization required: must be logged in
  **/

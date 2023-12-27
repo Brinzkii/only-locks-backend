@@ -12,7 +12,9 @@ const router = express.Router();
  *
  * Returns [ {game }, { game }, ...]
  *
- *  Where game is { id, date, location, homeTeam, awayTeam, clock, score }
+ *  Where game is { id, date, location, hometeam_id, hometeam_name,
+ *                  hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+ * 			        awayteam_code, awayteam_logo, clock, score }
  *
  * Authorization required: must be logged in
  **/
@@ -28,10 +30,9 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 
 /** GET /[gameId] => { game }
  *
- *  Returns { id, date, location, homeTeam, awayTeam, clock, score }
- *
- *  Where homeTeam and awayTeam are { id, code, nickname, name, city, logo,
- *                                    conference, division }
+ *  Returns { id, date, location, hometeam_id, hometeam_name,
+ *            hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+ * 			  awayteam_code, awayteam_logo, clock, score }
  *
  * Authorization required: must be logged in
  **/
@@ -51,7 +52,9 @@ router.get('/:gameId', authenticateJWT, ensureLoggedIn, async function (req, res
  *
  *  Returns [ {game }, { game }, ...]
  *
- *   Where game is { id, date, location, homeTeam, awayTeam, clock, score }
+ *   Where game is { id, date, location, hometeam_id, hometeam_name,
+ *                   hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+ * 			         awayteam_code, awayteam_logo, clock, score }
  *
  *  Authorization required: must be logged in
  **/
@@ -93,7 +96,9 @@ router.get('/filter/date/:date', authenticateJWT, ensureLoggedIn, async function
  *
  *  Returns [ {game }, { game }, ...]
  *
- *   Where game is { id, date, location, homeTeam, awayTeam, clock, score }
+ *   Where game is { id, date, location, hometeam_id, hometeam_name,
+ *                   hometeam_code, hometeam_logo, awayteam_id, awayteam_name,
+ * 			         awayteam_code, awayteam_logo, clock, score }
  *
  *  Authorization required: must be logged in
  **/
