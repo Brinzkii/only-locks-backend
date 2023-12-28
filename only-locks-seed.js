@@ -6,6 +6,7 @@ const headers = {
 	'x-rapidapi-key': 'c9ad8c5298160b466f4320b236e3eae3',
 	'x-rapidapi-host': 'v2.nba.api-sports.io',
 };
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 async function getTeams() {
 	try {
@@ -132,7 +133,10 @@ async function getTeamStats() {
 	try {
 		const response = await db.query('SELECT id from teams');
 		let teams = response.rows;
-		for (let team of teams.slice(10, 15)) {
+		let count = 0;
+		for (let team of teams) {
+			count++;
+			if (count % 10 === 0) await delay(45000);
 			let URL = BASE_URL + `teams/statistics?id=${team.id}&season=2023`;
 			const response = await axios.get(URL, { headers });
 			let teamStats = response.data.response;
@@ -166,10 +170,14 @@ async function getTeamStats() {
 						ts.plusMinus,
 					]
 				);
+
+				console.log(`Added stats for ${team.name}`);
 			}
 		}
 	} catch (err) {
 		console.error(err);
 	}
 }
+
+getTeamStats();
 
