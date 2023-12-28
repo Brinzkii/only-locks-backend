@@ -67,7 +67,7 @@ class Player {
 	static async seasonStats(id) {
 		const player = await this.get(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.name AS name, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -99,7 +99,7 @@ class Player {
 		if (!playerId || !gameId) throw new BadRequestError('Must include a player ID and game ID to get game stats!');
 
 		const gameStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.name AS player_name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
             FROM game_stats g
 			JOIN players p ON g.player_id = p.id
             WHERE g.player_id = $1
@@ -115,6 +115,61 @@ class Player {
 		gameStats.game = game;
 
 		return gameStats;
+	}
+
+	/** Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
+	 *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks,
+	 *       plusMinus
+	 *
+	 * 	Order maybe DESC or ASC (case insensitive)
+	 *
+	 * 	Returns [ {seasonStats}, ... ]
+	 *
+	 * 	Where seasonStats is { player_id, name, points, fgm, fga, fgp, ftm, fta,
+	 * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
+	 *                         steals, turnovers, blocks, plusMinus }
+	 *
+	 *  Throws BadRequestError if method or order are invalid.
+	 **/
+
+	static async sortByStats(method, order = 'DESC') {
+		const validMethods = [
+			'points',
+			'fgm',
+			'fga',
+			'fgp',
+			'ftm',
+			'fta',
+			'ftp',
+			'tpm',
+			'tpa',
+			'tpp',
+			'offReb',
+			'defReb',
+			'assists',
+			'fouls',
+			'steals',
+			'turnovers',
+			'blocks',
+			'plusMinus',
+		];
+		const isValid = validMethods.indexOf(method.toLowerCase());
+
+		if (isValid === -1) throw new BadRequestError(`Sort method is limited to the following: ${validMethods}`);
+
+		if (order.toLowerCase() != 'asc' && order.toLowerCase() != 'desc')
+			throw new BadRequestError('Order must be DESC or ASC');
+
+		const playersRes = await db.query(
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			FROM season_stats s
+			JOIN players p ON s.player_id = p.id
+			ORDER BY ${method.toLowerCase()} ${order}`
+		);
+
+		const players = playersRes.rows;
+
+		return players;
 	}
 }
 

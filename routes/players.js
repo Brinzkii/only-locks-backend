@@ -86,4 +86,30 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 	}
 });
 
+/** GET /sort/[method]/desc
+ * 
+ * 	Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
+ *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks, 
+ *       plusMinus
+ * 
+ * 	Order maybe DESC or ASC (case insensitive)
+ * 
+ * 	Returns [ {seasonStats}, ... ]
+ * 
+ * 	Where seasonStats is { player_id, name, points, fgm, fga, fgp, ftm, fta, 
+ * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
+ *                         steals, turnovers, blocks, plusMinus }
+ * 
+ * 	Authorization required: must be logged in
+ **/
+
+router.get('/sort/:stat/:order', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const sortedStats = await Player.sortByStats(req.params.stat, req.params.order)
+		return res.json({ sortedStats });
+	} catch (err) {
+		return next(err);
+	}
+})
+
 module.exports = router;
