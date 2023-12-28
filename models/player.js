@@ -9,16 +9,16 @@ const Game = require('./game');
 class Player {
 	/** Given a player_id, return data about that player.
 	 *
-	 *  Returns { id, firstName, lastName, team_id, team_name, team_conference,
-	 * 			  team_division, team_logo, birthday, height, weight, college, number,
-	 * 			  position }
+	 *  Returns { player_id, firstName, lastName, team_id, team_name,
+	 * 			  team_conference, team_division, team_logo, birthday, height,
+	 * 			  weight, college, number, position }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
 
 	static async get(id) {
 		const playerRes = await db.query(
-			`SELECT p.id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id
             WHERE p.id = $1`,
@@ -39,7 +39,7 @@ class Player {
 	 *
 	 *  Returns [ { player }, { player }, ... ]
 	 *
-	 *  Where player is { id, firstName, lastName, team_id, team_name,
+	 *  Where player is { player_id, firstName, lastName, team_id, team_name,
 	 * 					  team_conference, team_division, team_logo, birthday,
 	 * 					  height, weight, college, number, position }
 	 *
@@ -47,7 +47,7 @@ class Player {
 
 	static async getAll() {
 		const playersRes = await db.query(
-			`SELECT p.id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id`
 		);
@@ -57,8 +57,8 @@ class Player {
 
 	/** Given a player_id, return season stats for player
 	 *
-	 *  Returns { player_id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
-	 *            tpa, tpp, offReb, defReb, assists, fouls,
+	 *  Returns { player_id, firstname, lastname, points, fgm, fga, fgp, ftm,
+	 * 			  fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
 	 *            steals, turnovers, blocks, plusMinus }
 	 *
 	 *  Throws NotFoundError if not found.
@@ -83,9 +83,9 @@ class Player {
 
 	/** Given a player_id and game_id, return game stats for player
 	 *
-	 *  Returns { player_id, player_name, game, minutes, points, fgm, fga, fgp,
-	 * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
-	 * 			  steals, turnovers, blocks }
+	 *  Returns { player_id, firstname, lastname game, minutes, points, fgm,
+	 * 			  fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb,
+	 * 			  assists, fouls, steals, turnovers, blocks }
 	 *
 	 *  Where game is { id, date, location, hometeam_id, hometeam_name,
 	 *                  hometeam_code, hometeam_logo, awayteam_id,
@@ -117,11 +117,15 @@ class Player {
 		return gameStats;
 	}
 
-	/** Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
-	 *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks,
-	 *       plusMinus
+	/** Returns players sorted by desired stat
 	 *
-	 * 	Order maybe DESC or ASC (case insensitive)
+	 *  Method to sort by includes: points, fgm, fga, fgp, ftm, fta, ftp,
+	 *  tpm, tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers,
+	 *  blocks, plusMinus
+	 *
+	 *  Date may be date string "DD-MM-YYYY", "today", "yesterday", "season"
+	 *
+	 * 	Order may be DESC or ASC (case insensitive)
 	 *
 	 * 	Returns [ {seasonStats}, ... ]
 	 *
@@ -132,7 +136,10 @@ class Player {
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
 
-	static async sortByStats(method, order = 'DESC') {
+	static async sortByStats(date, method, order = 'DESC') {
+		const lowDate = date.toLowerCase();
+		const lowMethod = method.toLowerCase();
+		const lowOrder = order.toLowerCase();
 		const validMethods = [
 			'points',
 			'fgm',
@@ -144,30 +151,67 @@ class Player {
 			'tpm',
 			'tpa',
 			'tpp',
-			'offReb',
-			'defReb',
+			'off_reb',
+			'def_reb',
 			'assists',
 			'fouls',
 			'steals',
 			'turnovers',
 			'blocks',
-			'plusMinus',
+			'plus_minus',
 		];
-		const isValid = validMethods.indexOf(method.toLowerCase());
+		const isValid = validMethods.indexOf(lowMethod);
 
 		if (isValid === -1) throw new BadRequestError(`Sort method is limited to the following: ${validMethods}`);
 
-		if (order.toLowerCase() != 'asc' && order.toLowerCase() != 'desc')
-			throw new BadRequestError('Order must be DESC or ASC');
+		if (lowOrder != 'asc' && lowOrder != 'desc') throw new BadRequestError('Order must be DESC or ASC');
 
-		const playersRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
-			FROM season_stats s
-			JOIN players p ON s.player_id = p.id
-			ORDER BY ${method.toLowerCase()} ${order}`
-		);
+		let playersRes;
+		if (lowDate === 'season') {
+			playersRes = await db.query(
+				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+				FROM season_stats s
+				JOIN players p ON s.player_id = p.id
+				ORDER BY ${lowMethod} ${lowOrder}`
+			);
+		} else if (lowDate === 'today' || lowDate === 'yesterday') {
+			let d;
+			let day;
+			let yesterday;
+			if (lowDate === 'today') {
+				d = new Date();
+				day = d.toISOString().slice(0, 10);
+			} else {
+				d = new Date();
+				yesterday = d.getDate() - 1;
+				d.setDate(yesterday);
+				day = d.toISOString().slice(0, 10);
+			}
+
+			playersRes = await db.query(
+				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				FROM game_stats gs
+				JOIN players p ON gs.player_id = p.id
+				JOIN games ga ON gs.game_id = ga.id
+				WHERE ga.date = $1
+				ORDER BY ${lowMethod} ${lowOrder}`,
+				[day]
+			);
+		} else {
+			playersRes = await db.query(
+				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				FROM game_stats gs
+				JOIN players p ON gs.player_id = p.id
+				JOIN games ga ON gs.game_id = ga.id
+				WHERE ga.date = $1
+				ORDER BY ${lowMethod} ${lowOrder}`,
+				[lowDate]
+			);
+		}
 
 		const players = playersRes.rows;
+
+		if (!players) throw new BadRequestError('Error retrieving player stats, please try again!');
 
 		return players;
 	}

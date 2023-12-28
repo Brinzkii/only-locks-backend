@@ -86,30 +86,33 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 	}
 });
 
-/** GET /sort/[method]/desc
+/** GET /sort/[time]/[method]/desc
  * 
  * 	Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
  *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks, 
  *       plusMinus
  * 
- * 	Order maybe DESC or ASC (case insensitive)
+ * 	Time can be a date string "DD-MM-YYYY", "season", "today", or "yesterday"
+ * 
+ * 	Order may be DESC or ASC (case insensitive)
  * 
  * 	Returns [ {seasonStats}, ... ]
  * 
- * 	Where seasonStats is { player_id, name, points, fgm, fga, fgp, ftm, fta, 
- * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
- *                         steals, turnovers, blocks, plusMinus }
+ * 	Where seasonStats is { player_id, firstname, lastname, points, fgm, fga, 
+ * 			               fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, 
+ * 						   assists, fouls, steals, turnovers, blocks, 
+ * 						   plusMinus }
  * 
  * 	Authorization required: must be logged in
  **/
 
-router.get('/sort/:stat/:order', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.get('/sort/:time/:stat/:order', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const sortedStats = await Player.sortByStats(req.params.stat, req.params.order)
+		const sortedStats = await Player.sortByStats(req.params.time, req.params.stat, req.params.order);
 		return res.json({ sortedStats });
 	} catch (err) {
 		return next(err);
 	}
-})
+});
 
 module.exports = router;

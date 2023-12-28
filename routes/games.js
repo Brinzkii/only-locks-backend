@@ -62,24 +62,22 @@ router.get('/:gameId', authenticateJWT, ensureLoggedIn, async function (req, res
 router.get('/filter/date/:date', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
 		const date = req.params.date;
-		if (date === 'today') {
-			const d = new Date();
-			const today = d.toISOString().slice(0, 10);
-			const games = await Game.filter(null, today);
-			return res.json({ games });
-		} else if (date === 'yesterday') {
+		if (date === 'today' || date === 'yesterday' || date === 'tomorrow') {
 			let d = new Date();
-			let day = d.getDate() - 1;
-			d.setDate(day);
-			const yesterday = d.toISOString().slice(0, 10);
-			const games = await Game.filter(null, yesterday);
-			return res.json({ games });
-		} else if (date === 'tomorrow') {
-			let d = new Date();
-			let day = d.getDate() + 1;
-			d.setDate(day);
-			const yesterday = d.toISOString().slice(0, 10);
-			const games = await Game.filter(null, yesterday);
+			let day;
+			if (date === 'today') {
+				day = d.toISOString().slice(0, 10);
+			} else if (date === 'yesterday') {
+				day = d.getDate() - 1;
+				d.setDate(day);
+				day = d.toISOString().slice(0, 10);
+			} else {
+				day = d.getDate() + 1;
+				d.setDate(day);
+				day = d.toISOString().slice(0, 10);
+			}
+
+			const games = await Game.filter(null, day);
 			return res.json({ games });
 		} else {
 			const games = await Game.filter(null, date);
