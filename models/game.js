@@ -6,6 +6,23 @@ const Team = require('./team');
 /** Related functions for games */
 
 class Game {
+	/** Given a game_id, check if in database and throws NotFoundError if not */
+
+	static async checkValid(gameId) {
+		const gameRes = await db.query(
+			`SELECT id, date, location
+            FROM games
+            WHERE id = $1`,
+			[gameId]
+		);
+
+		const game = gameRes.rows[0];
+
+		if (!game) throw new NotFoundError(`No game: ${username}`);
+
+		return game;
+	}
+
 	/** Given a game_id, returns data about game
 	 *
 	 *  Returns { id, date, location, hometeam_id, hometeam_name,

@@ -7,6 +7,23 @@ const Game = require('./game');
 /** Related functions for players */
 
 class Player {
+	/** Given a player_id, check if in database and throws NotFoundError if not */
+
+	static async checkValid(playerId) {
+		const playerRes = await db.query(
+			`SELECT id, first_name AS firstname, last_name AS lastname
+            FROM players
+            WHERE id = $1`,
+			[playerId]
+		);
+
+		const player = playerRes.rows[0];
+
+		if (!player) throw new NotFoundError(`No player: ${username}`);
+
+		return player;
+	}
+
 	/** Given a player_id, return data about that player.
 	 *
 	 *  Returns { player_id, firstName, lastName, team_id, team_name,
@@ -57,9 +74,9 @@ class Player {
 
 	/** Given a player_id, return season stats for player
 	 *
-	 *  Returns { player_id, firstname, lastname, points, fgm, fga, fgp, ftm,
-	 * 			  fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
-	 *            steals, turnovers, blocks, plusMinus }
+	 *  Returns { player_id, firstname, lastname, minutes, points, fgm, fga,
+	 * 			  fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
+	 * 			  fouls, steals, turnovers, blocks, plusMinus }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
@@ -67,7 +84,7 @@ class Player {
 	static async seasonStats(id) {
 		const player = await this.get(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -141,6 +158,7 @@ class Player {
 		const lowMethod = method.toLowerCase();
 		const lowOrder = order.toLowerCase();
 		const validMethods = [
+			'minutes',
 			'points',
 			'fgm',
 			'fga',
@@ -169,7 +187,7 @@ class Player {
 		let playersRes;
 		if (lowDate === 'season') {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`

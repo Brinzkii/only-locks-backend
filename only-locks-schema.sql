@@ -1,6 +1,8 @@
 CREATE TABLE users (
     username VARCHAR(25) PRIMARY KEY,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    wins INTEGER,
+    losses INTEGER
 );
 
 CREATE TABLE teams (
@@ -26,6 +28,28 @@ CREATE TABLE players (
     position VARCHAR(5),
     team_id INTEGER
         REFERENCES teams ON DELETE CASCADE
+);
+
+CREATE TABLE player_picks (
+    id SERIAL PRIMARY KEY,
+    username TEXT   
+        REFERENCES users ON DELETE CASCADE,
+    player_id INTEGER 
+        REFERENCES players ON DELETE CASCADE,
+    game_id INTEGER
+        REFERENCES games ON DELETE CASCADE,
+    stat TEXT NOT NULL,
+    over_under TEXT NOT NULL,
+    value INTEGER NOT NULL,
+    result BOOLEAN
+);
+
+CREATE TABLE team_picks (
+    id SERIAL PRIMARY KEY,
+    username TEXT   
+        REFERENCES users ON DELETE CASCADE,
+    team_id INTEGER 
+        REFERENCES
 );
 
 CREATE TABLE followed_teams (

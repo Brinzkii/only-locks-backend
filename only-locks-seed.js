@@ -1,4 +1,5 @@
 const axios = require('axios');
+const moment = require('moment');
 const db = require('./db');
 const API_KEY = require('./secrets');
 
@@ -101,17 +102,15 @@ async function getGames() {
 				score = `${game.scores.home.points} - ${game.scores.visitors.points}`;
 			}
 
-			// check if both teams are in NBA before adding game to db
-			let isNba = await db.query('SELECT * FROM teams WHERE id=$1 OR id=$2', [
-				game.teams.home.id,
-				game.teams.visitors.id,
-			]);
-			if (isNba.rows.length === 2) {
+			// only add regular season games
+			const seasonStart = moment('2023-10-24');
+			let date = moment(game.date.start);
+			if (date >= seasonStart) {
 				db.query(
 					'INSERT INTO games (id, date, location, home_team, away_team, clock, score) VALUES ($1, $2, $3, $4, $5, $6, $7)',
 					[
 						game.id,
-						game.date.start.slice(0, 10),
+						date.format('LLL'),
 						game.arena.name + ` (${game.arena.city})`,
 						game.teams.home.id,
 						game.teams.visitors.id,
@@ -123,6 +122,7 @@ async function getGames() {
 				console.log(`Game(${game.id}) has been added!`);
 			}
 		}
+		console.log('All regular season games added!');
 	} catch (err) {
 		console.error(err);
 	}
@@ -281,4 +281,3 @@ async function populateSeasonStats() {
 }
 
 populateSeasonStats();
-
