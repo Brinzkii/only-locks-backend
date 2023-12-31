@@ -142,18 +142,46 @@ router.delete('/:username/picks/players/:pickId', ensureCorrectUser, async funct
 	}
 });
 
-/** POST /[username]/picks/team/[teamId]  { state } => { application }
+/** POST /[username]/picks/team/[team_id]  { state } => { application }
  *
- * Returns { user }
+ * 	Body must include { gameId, win_spread, value }
+ * 		Where gameId is an integer
+ *
+ * 		Where win_spread can be 'win' or 'spread'
+ *
+ * 		Where value is an integer
+ *
+ * Returns { pick }
  *
  * Authorization required: same-user-as-:username
  **/
 
-router.post('/:username/picks/teams/:id', ensureCorrectUser, async function (req, res, next) {
+router.post('/:username/picks/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const teamId = +req.params.id;
-		const user = await User.follow(req.params.username, teamId);
-		return res.json({ user });
+		const { gameId, win_spread, value } = req.body;
+		const teamId = +req.params.teamId;
+		const pick = await User.teamPick(req.params.username, teamId, gameId, win_spread, value);
+		return res.json({ pick });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** DELETE /[username]/picks/[pickId]  { state } => { application }
+ *
+ * 	Removes a team pick from DB.
+ *
+ * 	Returns { removed: { pick } }
+ *
+ * 	Authorization required: same-user-as-:username
+ **/
+
+router.delete('/:username/picks/teams/:pickId', ensureCorrectUser, async function (req, res, next) {
+	try {
+		const pickId = +req.params.pickId;
+		const username = req.params.username;
+		const pick = await User.deleteTeamPick(username, pickId);
+		return res.json({ removed: pick });
 	} catch (err) {
 		return next(err);
 	}

@@ -264,10 +264,10 @@ class User {
 	}
 
 	/**	Given a username, player_id, stat, over_under and value
-	 * 	add pick to db and return user picks
+	 * 	add pick to db
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { player_id, game_id, stat, over_under, value }
+	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
 	 *
 	 * 	Throws NotFoundError if user, player or game not found
 	 * 	Throws BadRequest error is stat category invalid
@@ -309,11 +309,10 @@ class User {
 		return pick;
 	}
 
-	/**	Given a username, player_id, stat, over_under and value
-	 * 	add pick to db and return user picks
+	/**	Given a username and pickId remove pick from DB
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { player_id, game_id, stat, over_under, value }
+	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
 	 *
 	 * 	Throws NotFoundError if user, player or game not found
 	 * 	Throws BadRequest error is stat category invalid
@@ -331,6 +330,61 @@ class User {
 		if (!pick) throw new NotFoundError(`Pick ${pickId} not found!`);
 
 		await db.query('DELETE FROM player_picks WHERE id = $1', [pickId]);
+
+		return pick;
+	}
+
+	/**	Given a username, team_id, game_id, win_spread and value
+	 * 	add pick to db
+	 *
+	 * 	Returns { pick }
+	 * 		Where pick is { id, team_id, game_id, win_spread, value }
+	 *
+	 * 	Throws NotFoundError if user, player or game not found
+	 * 	Throws BadRequest error is stat category invalid
+	 **/
+
+	static async teamPick(username, teamId, gameId, win_spread, value) {
+		const user = await this.checkValid(username);
+		const team = await Team.checkValid(teamId);
+		const game = await Game.checkValid(gameId);
+		const winOrSpread = win_spread.toLowerCase();
+
+		if (winOrSpread != 'win' && winOrSpread != 'spread') {
+			throw new BadRequestError('Win_spread must be either "win" or "spread"');
+		}
+
+		const pickRes = await db.query(
+			`
+		INSERT INTO team_picks (username, team_id, game_id, win_spread, value) VALUES ($1, $2, $3, $4, $5) RETURNING id, team_id, game_id, win_spread, value`,
+			[username, teamId, gameId, win_spread.toUpperCase(), value]
+		);
+
+		const pick = pickRes.rows[0];
+
+		return pick;
+	}
+
+	/**	Given a username and pickId remove pick from DB
+	 *
+	 * 	Returns { pick }
+	 * 		Where pick is { id, player_id, game_id, win_spread, value }
+	 *
+	 * 	Throws NotFoundError if user, player or game not found
+	 * 	Throws BadRequest error is stat category invalid
+	 **/
+
+	static async deleteTeamPick(username, pickId) {
+		const user = await this.checkValid(username);
+		const pickRes = await db.query(`SELECT id, team_id, game_id, win_spread, value from team_picks WHERE id = $1`, [
+			pickId,
+		]);
+
+		const pick = pickRes.rows[0];
+
+		if (!pick) throw new NotFoundError(`Pick ${pickId} not found!`);
+
+		await db.query('DELETE FROM team_picks WHERE id = $1', [pickId]);
 
 		return pick;
 	}

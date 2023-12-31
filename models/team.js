@@ -5,6 +5,23 @@ const { NotFoundError } = require('../expressError');
 /** Related functions for teams */
 
 class Team {
+	/** Given a username, check if in database and throws NotFoundError if not */
+
+	static async checkValid(teamId) {
+		const teamRes = await db.query(
+			`SELECT id
+            FROM teams
+            WHERE id = $1`,
+			[teamId]
+		);
+
+		const team = teamRes.rows[0];
+
+		if (!team) throw new NotFoundError(`No team: ${teamId}`);
+
+		return team;
+	}
+
 	/** Given a team_id, return data about that team.
 	 *
 	 *  Returns { id, code, nickname, name, city, logo, conference, division }

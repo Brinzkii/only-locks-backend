@@ -49,7 +49,12 @@ CREATE TABLE team_picks (
     username TEXT   
         REFERENCES users ON DELETE CASCADE,
     team_id INTEGER 
-        REFERENCES
+        REFERENCES teams ON DELETE CASCADE,
+    game_id INTEGER
+        REFERENCES games ON DELETE CASCADE,
+    win_spread TEXT NOT NULL,
+    value INTEGER,
+    result BOOLEAN
 );
 
 CREATE TABLE followed_teams (
