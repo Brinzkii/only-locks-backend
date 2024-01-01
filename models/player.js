@@ -35,7 +35,7 @@ class Player {
 
 	static async get(id) {
 		const playerRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id
             WHERE p.id = $1`,
@@ -64,7 +64,7 @@ class Player {
 
 	static async getAll() {
 		const playersRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id`
 		);
@@ -84,7 +84,7 @@ class Player {
 	static async seasonStats(id) {
 		const player = await this.get(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -116,7 +116,7 @@ class Player {
 		if (!playerId || !gameId) throw new BadRequestError('Must include a player ID and game ID to get game stats!');
 
 		const gameStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
+			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
             FROM game_stats g
 			JOIN players p ON g.player_id = p.id
             WHERE g.player_id = $1
@@ -187,7 +187,7 @@ class Player {
 		let playersRes;
 		if (lowDate === 'season') {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`
@@ -207,7 +207,7 @@ class Player {
 			}
 
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
@@ -217,7 +217,7 @@ class Player {
 			);
 		} else {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.first_name AS firstName, p.last_name AS lastName, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id

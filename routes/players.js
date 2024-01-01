@@ -11,7 +11,7 @@ const router = express.Router();
 /** GET / => { players }
  *
  * Returns [ { player }, { player }, ...]
- *      Where player is { id, firstName, lastName, team_id, team_name, 
+ *      Where player is { id, name, team_id, team_name, 
  * 						  team_conference, team_division, team_logo, birthday, 
  * 						  height, weight, college, number, position }
  *
@@ -29,7 +29,7 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 
 /** GET /[playerId] => { player }
  *
- *  Returns { id, firstName, lastName, team_id, team_name, 
+ *  Returns { id, name, lastName, team_id, team_name, 
  * 			  team_conference, team_division, team_logo, birthday, 
  * 			  height, weight, college, number, position }
  *
@@ -65,7 +65,7 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 
 /** GET /[playerId]/stats/game/[gameId] => { gameStats }
  *
- *	Returns { player_id, player_name, game, minutes, points, fgm, fga, fgp,
+ *	Returns { player_id, name, game, minutes, points, fgm, fga, fgp,
  * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
  * 			  steals, turnovers, blocks }
  *
@@ -88,6 +88,8 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 
 /** GET /sort/[time]/[method]/desc
  * 
+ *  Must include stat, time and order in body of request
+ * 
  * 	Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
  *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks, 
  *       plusMinus
@@ -98,7 +100,7 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  * 
  * 	Returns [ {seasonStats}, ... ]
  * 
- * 	Where seasonStats is { player_id, firstname, lastname, points, fgm, fga, 
+ * 	Where seasonStats is { player_id, name, points, fgm, fga, 
  * 			               fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, 
  * 						   assists, fouls, steals, turnovers, blocks, 
  * 						   plusMinus }
@@ -106,9 +108,10 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  * 	Authorization required: must be logged in
  **/
 
-router.get('/sort/:time/:stat/:order', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const sortedStats = await Player.sortByStats(req.params.time, req.params.stat, req.params.order);
+		const { time, stat, order } = req.body;
+		const sortedStats = await Player.sortByStats(time, stat, order);
 		return res.json({ sortedStats });
 	} catch (err) {
 		return next(err);
