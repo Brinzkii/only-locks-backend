@@ -82,7 +82,7 @@ class Player {
 	 **/
 
 	static async seasonStats(id) {
-		const player = await this.get(id);
+		await this.checkValid(id);
 		const playerStatsRes = await db.query(
 			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
             FROM season_stats s
@@ -96,6 +96,54 @@ class Player {
 		if (!seasonStats) throw new NotFoundError(`No season stats for player: ${id}`);
 
 		return seasonStats;
+	}
+
+	/** Update season stats for all players in DB */
+
+	static async updateSeasonStats() {
+		const playersRes = await db.query(`SELECT id, last_name || ', ' || first_name AS name from players`);
+		const players = playersRes.rows;
+		for (let player of players) {
+			// Find all instances of game stats and sum up before adding to season_stats
+			const response = await db.query(
+				`SELECT SUM(minutes) AS minutes, SUM(points) AS points, SUM(fgm) AS fgm, SUM(fga) AS fga, AVG(NULLIF(fgp, 0)) AS fgp, SUM(ftm) AS ftm, SUM(fta) AS fta, AVG(NULLIF(ftp, 0)) AS ftp, SUM(tpm) AS tpm, SUM(tpa) AS tpa, AVG(NULLIF(tpp, 0)) AS tpp, SUM(off_reb) AS offReb, SUM(def_reb) AS defReb, SUM(off_reb + def_reb) AS totalReb, SUM(assists) AS assists, SUM(fouls) AS fouls, SUM(steals) AS steals, SUM(turnovers) AS turnovers, SUM(blocks) AS blocks, SUM(plus_minus) AS plusMinus
+				FROM game_stats
+				WHERE player_id = $1`,
+				[player.id]
+			);
+			const stats = response.rows[0];
+
+			await db.query(
+				`UPDATE season_stats
+				SET minutes = $1, points = $2, fgm = $3, fga = $4, fgp = $5, ftm = $6, fta = $7, ftp = $8, tpm = $9, tpa = $10, tpp = $11, off_reb = $12, def_reb = $13, total_reb = $14, assists = $15, fouls = $16, steals = $17, turnovers = $18, blocks = $19, plus_minus = $20
+				WHERE player_id = $21`,
+				[
+					stats.minutes || 0,
+					stats.points || 0,
+					stats.fgm || 0,
+					stats.fga || 0,
+					stats.fgp || 0,
+					stats.ftm || 0,
+					stats.fta || 0,
+					stats.ftp || 0,
+					stats.tpm || 0,
+					stats.tpa || 0,
+					stats.tpp || 0,
+					stats.offreb || 0,
+					stats.defreb || 0,
+					stats.totalreb || 0,
+					stats.assists || 0,
+					stats.fouls || 0,
+					stats.steals || 0,
+					stats.turnovers || 0,
+					stats.blocks || 0,
+					stats.plusminus || 0,
+					player.id,
+				]
+			);
+			console.log(`Updated season stats for ${player.name}!`);
+		}
+		return true;
 	}
 
 	/** Given a player_id and game_id, return game stats for player

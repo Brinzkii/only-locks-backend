@@ -41,7 +41,7 @@ router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, 
 	}	
 });
 
-/** PATCH /stats =>{ teamStatUpdate } 
+/** PATCH /stats =>{ updateTeamStats } 
  * 
  * 	Updates team season stats
  * 

@@ -118,4 +118,20 @@ router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, 
 	}
 });
 
+/** PATCH /stats =>{ updatePlayerSeasonStats } 
+ * 
+ * 	Updates player season stats
+ * 
+ * 	Authorization required: must be logged in
+ **/
+
+router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		await Player.updateSeasonStats()
+		return res.json({updatePlayerSeasonStats: 'success'})
+	} catch (err) {
+		return next(err)
+	}
+})
+
 module.exports = router;
