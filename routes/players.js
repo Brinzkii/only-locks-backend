@@ -48,7 +48,7 @@ router.get('/:playerId', authenticateJWT, ensureLoggedIn, async function (req, r
 /** GET /[playerId]/stats/season => { seasonStats }
  *
  *	Returns { player_id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
- *            tpa, tpp, offReb, defReb, assists, fouls,
+ *            tpa, tpp, offReb, defReb, totalReb, assists, fouls,
  *            steals, turnovers, blocks, plusMinus }
  *
  *  Authorization required: must be logged in
@@ -91,8 +91,8 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  *  Must include stat, time and order in body of request
  * 
  * 	Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
- *       tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, blocks, 
- *       plusMinus
+ *       tpa, tpp, offReb, defReb, totalReb (season stats only), assists, 
+ * 		 fouls, steals, turnovers, blocks, plusMinus
  * 
  * 	Time can be a date string "DD-MM-YYYY", "season", "today", or "yesterday"
  * 

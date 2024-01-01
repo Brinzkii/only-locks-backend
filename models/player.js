@@ -75,8 +75,8 @@ class Player {
 	/** Given a player_id, return season stats for player
 	 *
 	 *  Returns { player_id, firstname, lastname, minutes, points, fgm, fga,
-	 * 			  fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
-	 * 			  fouls, steals, turnovers, blocks, plusMinus }
+	 * 			  fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb
+	 * 			  assists, fouls, steals, turnovers, blocks, plusMinus }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
@@ -84,7 +84,7 @@ class Player {
 	static async seasonStats(id) {
 		await this.checkValid(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.total_reb AS totalReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -219,6 +219,7 @@ class Player {
 			'tpp',
 			'off_reb',
 			'def_reb',
+			'total_reb',
 			'assists',
 			'fouls',
 			'steals',
@@ -235,7 +236,7 @@ class Player {
 		let playersRes;
 		if (lowDate === 'season') {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.total_reb AS totalReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`
