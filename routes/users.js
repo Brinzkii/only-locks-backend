@@ -28,14 +28,14 @@ router.get('/:username', async function (req, res, next) {
 
 /** POST /[username]/[playerId]  { state } => { application }
  *
- * Returns {"followedPlayer": playerId}
+ * Returns { user }
  *
  * Authorization required: same-user-as-:username
  **/
 
-router.post('/:username/players/:id', ensureCorrectUser, async function (req, res, next) {
+router.post('/:username/players/:playerId', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const playerId = +req.params.id;
+		const playerId = +req.params.playerId;
 		const user = await User.follow(req.params.username, playerId);
 		return res.json({ user });
 	} catch (err) {
@@ -45,14 +45,14 @@ router.post('/:username/players/:id', ensureCorrectUser, async function (req, re
 
 /** POST /[username]/teams/[teamId]  { state } => { application }
  *
- * Returns {"followedTeam": TeamId}
+ * Returns { user }
  *
  * Authorization required: same-user-as-:username
  **/
 
-router.post('/:username/teams/:id', ensureCorrectUser, async function (req, res, next) {
+router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const teamId = +req.params.id;
+		const teamId = +req.params.teamId;
 		const user = await User.follow(req.params.username, teamId);
 		return res.json({ user });
 	} catch (err) {
@@ -62,14 +62,14 @@ router.post('/:username/teams/:id', ensureCorrectUser, async function (req, res,
 
 /** DELETE /[username]/[playerId]  { state } => { application }
  *
- * Returns {"unfollowedPlayer": playerId}
+ * Returns { user }
  *
  * Authorization required: same-user-as-:username
  **/
 
-router.delete('/:username/players/:id', ensureCorrectUser, async function (req, res, next) {
+router.delete('/:username/players/:playerId', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const playerId = +req.params.id;
+		const playerId = +req.params.playerId;
 		const user = await User.unfollow(req.params.username, playerId);
 		return res.json({ user });
 	} catch (err) {
@@ -79,14 +79,14 @@ router.delete('/:username/players/:id', ensureCorrectUser, async function (req, 
 
 /** DELETE /[username]/teams/[teamId]  { state } => { application }
  *
- * Returns {"unfollowedTeam": TeamId}
+ * Returns { user }
  *
  * Authorization required: same-user-as-:username
  **/
 
-router.delete('/:username/teams/:id', ensureCorrectUser, async function (req, res, next) {
+router.delete('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const teamId = +req.params.id;
+		const teamId = +req.params.teamId;
 		const user = await User.unfollow(req.params.username, teamId);
 		return res.json({ user });
 	} catch (err) {
