@@ -86,7 +86,7 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 	}
 });
 
-/** GET /sort/[time]/[method]/desc
+/** GET /stats/sort
  * 
  *  Must include stat, time and order in body of request
  * 

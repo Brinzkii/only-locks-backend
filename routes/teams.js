@@ -57,6 +57,37 @@ router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res
 	}
 });
 
+/** GET /stats/sort
+ * 
+ *  Must include stat and order in body of request
+ * 
+ * 	Stat to sort by can include games, fast_break_points, points_in_paint, 
+ * 	second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, 
+ * 	fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, 
+ * 	blocks, plusMinus
+ * 
+ * 	Order may be DESC or ASC (case insensitive)
+ * 
+ * 	Returns [ {teamStats}, ... ]
+ * 
+ * 	Where teamStats is { team_id, name, games, fastBreakPoints, pointsInPaint, 
+ * 						 secondChancePoints, pointsOffTurnovers, points, fgm, 
+ * 						 fga,fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb,
+ * 						 assists, fouls, steals, turnovers, blocks, plusMinus }
+ * 
+ * 	Authorization required: must be logged in
+ **/
+
+router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const {stat, order} = req.body
+		const teamStats = await Team.sortByStats(stat, order)
+		return res.json({teamStats})
+	} catch (err) {
+		return next(err)
+	}
+})
+
 /** GET /[teamId] => { team }
  *
  *  Returns { id, code, nickname, name, city, logo, conference, division }

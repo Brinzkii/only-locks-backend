@@ -169,7 +169,73 @@ class Team {
 		return teamStats;
 	}
 
-	/** Retrieve team stats from external API and update */
+	/** Returns players sorted by desired stat
+	 *
+	 *  Method to sort by includes: fast_break_points, points_in_paint,
+	 * 	second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm,
+	 * 	fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals,
+	 * 	turnovers, blocks, plusMinus
+	 *
+	 * 	Order may be DESC or ASC (case insensitive)
+	 *
+	 * 	Returns [ {teamStats}, ... ]
+	 *
+	 * 	Where teamStats is { team_id, name, fastBreakPoints, pointsInPaint,
+	 * 						 secondChancePoints, pointsOffTurnovers, points,
+	 * 						 fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp,
+	 * 						 offReb, defReb, assists, fouls, steals, turnovers,
+	 * 						 blocks, plusMinus }
+	 *
+	 *  Throws BadRequestError if method or order are invalid.
+	 **/
+
+	static async sortByStats(method, order) {
+		const lowMethod = method.toLowerCase();
+		const lowOrder = order.toLowerCase();
+		const validMethods = [
+			'games',
+			'fast_break_points',
+			'points_in_paint',
+			'second_chance_points',
+			'points_off_turnovers',
+			'points',
+			'fgm',
+			'fga',
+			'fgp',
+			'ftm',
+			'fta',
+			'ftp',
+			'tpm',
+			'tpa',
+			'tpp',
+			'off_reb',
+			'def_reb',
+			'assists',
+			'fouls',
+			'steals',
+			'turnovers',
+			'blocks',
+			'plus_minus',
+		];
+		const isValid = validMethods.indexOf(lowMethod);
+
+		if (isValid === -1) throw new BadRequestError(`Sort method is limited to the following: ${validMethods}`);
+
+		if (lowOrder != 'asc' && lowOrder != 'desc') throw new BadRequestError('Order must be DESC or ASC');
+
+		const teamsRes = await db.query(
+			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb, ts.def_reb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+			FROM team_stats ts
+			JOIN teams t ON ts.team_id = t.id
+			ORDER BY ${lowMethod} ${lowOrder}`
+		);
+
+		const teamStats = teamsRes.rows;
+
+		return teamStats;
+	}
+
+	/** Retrieve team stats from external API and update DB */
 
 	static async updateStats() {
 		const response = await db.query('SELECT id, name FROM teams');
