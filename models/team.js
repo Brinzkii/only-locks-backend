@@ -1,6 +1,13 @@
 const db = require('../db');
 const axios = require('axios');
 const { NotFoundError } = require('../expressError');
+const API_KEY = require('../secrets');
+
+const BASE_URL = 'https://v2.nba.api-sports.io/';
+const headers = {
+	'x-rapidapi-key': API_KEY || process.env.API_KEY,
+	'x-rapidapi-host': 'v2.nba.api-sports.io',
+};
 
 /** Related functions for teams */
 
@@ -119,7 +126,7 @@ class Team {
 
 	/** Given a team_id, return team stats for current season
 	 *
-	 *  Returns { team, games, fastBreakPoints, pointsInPaint,
+	 *  Returns { team_id, name, games, fastBreakPoints, pointsInPaint,
 	 *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
 	 *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
 	 *            fouls, steals, turnovers, blocks, plusMinus }
@@ -130,20 +137,83 @@ class Team {
 	static async stats(id) {
 		const teamData = await this.get(id);
 		const statsRes = await db.query(
-			`SELECT games, fast_break_points AS fastBreakPoints, points_in_paint AS pointsInPaint, second_chance_points AS secondChancePoints, points_off_turnovers AS pointsOffTurnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb AS offReb, def_reb AS defReb, assists, fouls, steals, turnovers, blocks, plus_minus AS plusMinus
-            FROM team_stats
+			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS offReb, ts.def_reb AS defReb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+            FROM team_stats ts
+			JOIN teams t ON ts.team_id = t.id
             WHERE team_id = $1`,
 			[id]
 		);
 
 		const teamStats = statsRes.rows[0];
-		// add team id and name to stats response
-		teamStats.team = {
-			id: teamData.id,
-			name: teamData.name,
-		};
 
 		return teamStats;
+	}
+
+	/**	Get stats for all teams
+	 *
+	 * 	Returns { team_id, name, games, fastBreakPoints, pointsInPaint,
+	 *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
+	 *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
+	 *            fouls, steals, turnovers, blocks, plusMinus }
+	 */
+
+	static async allStats() {
+		const statsRes = await db.query(
+			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS offReb, ts.def_reb AS defReb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+			FROM team_stats ts
+			JOIN teams t ON ts.team_id = t.id`
+		);
+
+		const teamStats = statsRes.rows;
+
+		return teamStats;
+	}
+
+	/** Retrieve team stats from external API and update */
+
+	static async updateStats() {
+		const response = await db.query('SELECT id, name FROM teams');
+		let teams = response.rows;
+		for (let team of teams) {
+			let URL = BASE_URL + `teams/statistics?id=${team.id}&season=2023`;
+			const response = await axios.get(URL, { headers });
+			let teamStats = response.data.response;
+			for (let ts of teamStats) {
+				db.query(
+					`UPDATE team_stats 
+					SET games = $1, fast_break_points = $2, points_in_paint = $3, second_chance_points = $4, points_off_turnovers = $5, points = $6, fgm = $7, fga = $8, fgp = $9, ftm = $10, fta = $11, ftp = $12, tpm = $13, tpa = $14, tpp = $15, off_reb = $16, def_reb = $17, assists = $18, fouls = $19, steals = $20, turnovers = $21, blocks = $22, plus_minus = $23
+					WHERE team_id = $24`,
+					[
+						ts.games,
+						ts.fastBreakPoints,
+						ts.pointsInPaint,
+						ts.secondChancePoints,
+						ts.pointsOffTurnovers,
+						ts.points,
+						ts.fgm,
+						ts.fga,
+						+ts.fgp,
+						ts.ftm,
+						ts.fta,
+						+ts.ftp,
+						ts.tpm,
+						ts.tpa,
+						+ts.tpp,
+						ts.offReb,
+						ts.defReb,
+						ts.assists,
+						ts.pFouls,
+						ts.steals,
+						ts.turnovers,
+						ts.blocks,
+						ts.plusMinus,
+						team.id,
+					]
+				);
+				console.log(`Updated stats for ${team.name}`);
+			}
+		}
+		return true;
 	}
 }
 module.exports = Team;

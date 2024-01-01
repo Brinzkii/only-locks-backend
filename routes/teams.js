@@ -26,6 +26,37 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 	}
 });
 
+/** GET /stats
+ * 
+ * 	Returns [ { teamStats } ]
+ * 
+ **/
+
+router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const teamStats = await Team.allStats()
+		return res.json({teamStats})
+	} catch(err) {
+		return next(err);
+	}	
+});
+
+/** PATCH /stats =>{ teamStatUpdate } 
+ * 
+ * 	Updates team season stats
+ * 
+ * 	Authorization required: must be logged in
+ **/
+
+router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		await Team.updateStats();
+		return res.json({updateTeamStats: 'success'})
+	} catch (err) {
+		return next(err);
+	}
+});
+
 /** GET /[teamId] => { team }
  *
  *  Returns { id, code, nickname, name, city, logo, conference, division }
@@ -61,7 +92,7 @@ router.get('/:teamId/stats', authenticateJWT, ensureLoggedIn, async function (re
 	}
 });
 
-/** GET /[teamId]/stats => { teamGames }
+/** GET /[teamId]/games => { teamGames }
  *
  *  Returns [ { id, date, location, homeTeam, awayTeam, clock, score } ]
  *
