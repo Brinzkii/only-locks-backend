@@ -3,7 +3,7 @@
 /** Routes for users. */
 
 const express = require('express');
-const { ensureCorrectUser } = require('../middleware/auth');
+const { ensureCorrectUser, ensureLoggedIn } = require('../middleware/auth');
 const User = require('../models/user');
 
 const router = express.Router();
@@ -94,9 +94,27 @@ router.delete('/:username/teams/:id', ensureCorrectUser, async function (req, re
 	}
 });
 
-/** POST /[username]/picks/player/[player_id]  { state } => { application }
+/**	GET /[username]/picks
  *
- * 	Body must include { gameId, stat, over_under, value }
+ * 	Returns { picks }
+ *
+ * 	Authorization required: must be logged in
+ **/
+
+router.get('/:username/picks', ensureLoggedIn, async function (req, res, next) {
+	try {
+		const picks = await User.picks(req.params.username);
+		return res.json({ picks });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** POST /[username]/picks/player  { state } => { application }
+ *
+ * 	Body must include { playerId, gameId, stat, over_under, value }
+ * 		Where playerId is an integer
+ *
  * 		Where gameId is an integer
  *
  * 		Where stat can be points, fgm, fga, ftm, fta, tpm, tpa, rebounds,
@@ -111,10 +129,9 @@ router.delete('/:username/teams/:id', ensureCorrectUser, async function (req, re
  * Authorization required: same-user-as-:username
  **/
 
-router.post('/:username/picks/players/:playerId', ensureCorrectUser, async function (req, res, next) {
+router.post('/:username/picks/players', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const { gameId, stat, over_under, value } = req.body;
-		const playerId = +req.params.playerId;
+		const { playerId, gameId, stat, over_under, value } = req.body;
 		const pick = await User.playerPick(req.params.username, playerId, gameId, stat, over_under, value);
 		return res.json({ pick });
 	} catch (err) {
@@ -142,9 +159,11 @@ router.delete('/:username/picks/players/:pickId', ensureCorrectUser, async funct
 	}
 });
 
-/** POST /[username]/picks/team/[team_id]  { state } => { application }
+/** POST /[username]/picks/team/  { state } => { application }
  *
- * 	Body must include { gameId, win_spread, value }
+ * 	Body must include { teamId, gameId, win_spread, value }
+ * 		Where teamId is an integer
+ *
  * 		Where gameId is an integer
  *
  * 		Where win_spread can be 'win' or 'spread'
@@ -156,10 +175,9 @@ router.delete('/:username/picks/players/:pickId', ensureCorrectUser, async funct
  * Authorization required: same-user-as-:username
  **/
 
-router.post('/:username/picks/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
+router.post('/:username/picks/teams', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const { gameId, win_spread, value } = req.body;
-		const teamId = +req.params.teamId;
+		const { teamId, gameId, win_spread, value } = req.body;
 		const pick = await User.teamPick(req.params.username, teamId, gameId, win_spread, value);
 		return res.json({ pick });
 	} catch (err) {

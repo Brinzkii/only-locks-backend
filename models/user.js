@@ -270,7 +270,7 @@ class User {
 	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
 	 *
 	 * 	Throws NotFoundError if user, player or game not found
-	 * 	Throws BadRequest error is stat category invalid
+	 * 	Throws BadRequest error if stat category invalid
 	 **/
 
 	static async playerPick(username, playerId, gameId, stat, over_under, value) {
@@ -289,9 +289,9 @@ class User {
 			'blocks',
 		];
 		const isValid = validMethods.indexOf(stat.toLowerCase());
-		const user = await this.checkValid(username);
-		const player = await Player.checkValid(playerId);
-		const game = await Game.checkValid(gameId);
+		await this.checkValid(username);
+		await Player.checkValid(playerId);
+		await Game.checkValid(gameId);
 
 		if (isValid === -1) throw new BadRequestError(`Stat selection is limited to the following: ${validMethods}`);
 
@@ -314,12 +314,11 @@ class User {
 	 * 	Returns { pick }
 	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
 	 *
-	 * 	Throws NotFoundError if user, player or game not found
-	 * 	Throws BadRequest error is stat category invalid
+	 * 	Throws NotFoundError if user or pick not found
 	 **/
 
 	static async deletePlayerPick(username, pickId) {
-		const user = await this.checkValid(username);
+		await this.checkValid(username);
 		const pickRes = await db.query(
 			`SELECT id, player_id, game_id, stat, over_under, value from player_picks WHERE id = $1`,
 			[pickId]
@@ -340,14 +339,14 @@ class User {
 	 * 	Returns { pick }
 	 * 		Where pick is { id, team_id, game_id, win_spread, value }
 	 *
-	 * 	Throws NotFoundError if user, player or game not found
-	 * 	Throws BadRequest error is stat category invalid
+	 * 	Throws NotFoundError if user, team or game not found
+	 * 	Throws BadRequest error if win_spread invalid
 	 **/
 
 	static async teamPick(username, teamId, gameId, win_spread, value) {
-		const user = await this.checkValid(username);
-		const team = await Team.checkValid(teamId);
-		const game = await Game.checkValid(gameId);
+		await this.checkValid(username);
+		await Team.checkValid(teamId);
+		await Game.checkValid(gameId);
 		const winOrSpread = win_spread.toLowerCase();
 
 		if (winOrSpread != 'win' && winOrSpread != 'spread') {
@@ -368,10 +367,9 @@ class User {
 	/**	Given a username and pickId remove pick from DB
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { id, player_id, game_id, win_spread, value }
+	 * 		Where pick is { id, team_id, game_id, win_spread, value }
 	 *
-	 * 	Throws NotFoundError if user, player or game not found
-	 * 	Throws BadRequest error is stat category invalid
+	 * 	Throws NotFoundError if user or pick not found
 	 **/
 
 	static async deleteTeamPick(username, pickId) {
@@ -387,6 +385,46 @@ class User {
 		await db.query('DELETE FROM team_picks WHERE id = $1', [pickId]);
 
 		return pick;
+	}
+
+	/**	Given a username return all of that users picks
+	 *
+	 * 	Returns { picks }
+	 * 		Where picks is { playerPicks, teamPicks }
+	 *
+	 * 	Throws NotFoundError if user not found
+	 **/
+
+	static async picks(username) {
+		await this.checkValid(username);
+		let picks = { playerPicks: [], teamPicks: [] };
+		const playerPicksRes = await db.query(
+			`SELECT pp.id, p.last_name || ', ' || p.first_name AS player, t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under, pp.value, pp.result
+		FROM player_picks pp
+		JOIN players p ON pp.player_id = p.id
+		JOIN games g ON pp.game_id = g.id
+		JOIN teams t1 ON g.home_team = t1.id
+		JOIN teams t2 ON g.away_team = t2.id
+		WHERE pp.username = $1
+		ORDER BY g.date DESC`,
+			[username]
+		);
+		picks.playerPicks = playerPicksRes.rows;
+
+		const teamPicksRes = await db.query(
+			`SELECT tp.id, t.name, t1.code || ' vs ' || t2.code AS game, g.date, tp.win_spread, tp.value
+		FROM team_picks tp
+		JOIN teams t ON tp.team_id = t.id
+		JOIN games g ON tp.game_id = g.id
+		JOIN teams t1 ON g.home_team = t1.id
+		JOIN teams t2 ON g.away_team = t2.id
+		WHERE tp.username = $1
+		ORDER BY g.date DESC`,
+			[username]
+		);
+		picks.teamPicks = teamPicksRes.rows;
+
+		return picks;
 	}
 }
 
