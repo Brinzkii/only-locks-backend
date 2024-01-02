@@ -2,7 +2,8 @@ CREATE TABLE users (
     username VARCHAR(25) PRIMARY KEY,
     password TEXT NOT NULL,
     wins INTEGER,
-    losses INTEGER
+    losses INTEGER,
+    is_admin BOOLEAN DEFAULT false
 );
 
 CREATE TABLE teams (
@@ -94,6 +95,7 @@ CREATE TABLE team_stats (
     tpp REAL NOT NULL,
     off_reb INTEGER NOT NULL,
     def_reb INTEGER NOT NULL,
+    total_reb INTEGER NOT NULL,
     assists INTEGER NOT NULL,
     fouls INTEGER NOT NULL,
     steals INTEGER NOT NULL,

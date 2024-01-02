@@ -16,11 +16,11 @@ const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 /** Related functions for players */
 
 class Player {
-	/** Given a player_id, check if in database and throws NotFoundError if not */
+	/** Given a playerId, check if in database and throws NotFoundError if not */
 
 	static async checkValid(playerId) {
 		const playerRes = await db.query(
-			`SELECT id, first_name AS firstname, last_name AS lastname
+			`SELECT id, last_name || ', ' || first_name AS name
             FROM players
             WHERE id = $1`,
 			[playerId]
@@ -33,10 +33,10 @@ class Player {
 		return player;
 	}
 
-	/** Given a player_id, return data about that player.
+	/** Given a playerId, return data about that player.
 	 *
-	 *  Returns { player_id, firstName, lastName, team_id, team_name,
-	 * 			  team_conference, team_division, team_logo, birthday, height,
+	 *  Returns { id, name, teamId, teamName,
+	 * 			  conference, division, teamLogo, birthday, height,
 	 * 			  weight, college, number, position }
 	 *
 	 *  Throws NotFoundError if not found.
@@ -44,7 +44,7 @@ class Player {
 
 	static async get(id) {
 		const playerRes = await db.query(
-			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.id AS "teamId", t.name AS "teamName", t.conference AS conference, t.division AS division, t.logo AS "teamLogo", p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id
             WHERE p.id = $1`,
@@ -65,15 +65,15 @@ class Player {
 	 *
 	 *  Returns [ { player }, { player }, ... ]
 	 *
-	 *  Where player is { player_id, firstName, lastName, team_id, team_name,
-	 * 					  team_conference, team_division, team_logo, birthday,
-	 * 					  height, weight, college, number, position }
+	 *  Where player is { id, name, teamId, teamName,
+	 * 			  		  conference, division, teamLogo, birthday, height,
+	 * 			  		  weight, college, number, position }
 	 *
 	 **/
 
 	static async getAll() {
 		const playersRes = await db.query(
-			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, t.id AS team_id, t.name AS team_name, t.conference AS team_conference, t.division AS team_division, t.logo AS team_logo, p.birthday, p.height, p.weight, p.college, p.number, p.position
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.id AS "teamId", t.name AS "teamName", t.conference AS conference, t.division AS division, t.logo AS "teamLogo", p.birthday, p.height, p.weight, p.college, p.number, p.position
             FROM players p
 			JOIN teams t ON p.team_id = t.id`
 		);
@@ -83,7 +83,7 @@ class Player {
 
 	/** Given a player_id, return season stats for player
 	 *
-	 *  Returns { player_id, firstname, lastname, minutes, points, fgm, fga,
+	 *  Returns { id, name, minutes, points, fgm, fga,
 	 * 			  fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb
 	 * 			  assists, fouls, steals, turnovers, blocks, plusMinus }
 	 *
@@ -93,7 +93,7 @@ class Player {
 	static async seasonStats(id) {
 		await this.checkValid(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.total_reb AS totalReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -115,7 +115,7 @@ class Player {
 		for (let player of players) {
 			// Find all instances of game stats and sum up before adding to season_stats
 			const response = await db.query(
-				`SELECT SUM(minutes) AS minutes, SUM(points) AS points, SUM(fgm) AS fgm, SUM(fga) AS fga, AVG(NULLIF(fgp, 0)) AS fgp, SUM(ftm) AS ftm, SUM(fta) AS fta, AVG(NULLIF(ftp, 0)) AS ftp, SUM(tpm) AS tpm, SUM(tpa) AS tpa, AVG(NULLIF(tpp, 0)) AS tpp, SUM(off_reb) AS offReb, SUM(def_reb) AS defReb, SUM(off_reb + def_reb) AS totalReb, SUM(assists) AS assists, SUM(fouls) AS fouls, SUM(steals) AS steals, SUM(turnovers) AS turnovers, SUM(blocks) AS blocks, SUM(plus_minus) AS plusMinus
+				`SELECT SUM(minutes) AS minutes, SUM(points) AS points, SUM(fgm) AS fgm, SUM(fga) AS fga, AVG(NULLIF(fgp, 0)) AS fgp, SUM(ftm) AS ftm, SUM(fta) AS fta, AVG(NULLIF(ftp, 0)) AS ftp, SUM(tpm) AS tpm, SUM(tpa) AS tpa, AVG(NULLIF(tpp, 0)) AS tpp, SUM(off_reb) AS offReb, SUM(def_reb) AS defReb, SUM(off_reb + def_reb) AS totalReb, SUM(assists) AS assists, SUM(fouls) AS fouls, SUM(steals) AS steals, SUM(turnovers) AS turnovers, SUM(blocks) AS blocks, SUM(plus_minus) AS "plusMinus"
 				FROM game_stats
 				WHERE player_id = $1`,
 				[player.id]
@@ -157,13 +157,13 @@ class Player {
 
 	/** Given a player_id and game_id, return game stats for player
 	 *
-	 *  Returns { player_id, firstname, lastname game, minutes, points, fgm,
+	 *  Returns { id, name, game, minutes, points, fgm,
 	 * 			  fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb,
-	 * 			  assists, fouls, steals, turnovers, blocks }
+	 * 			  assists, fouls, steals, turnovers, blocks, plusMinus }
 	 *
-	 *  Where game is { id, date, location, hometeam_id, hometeam_name,
-	 *                  hometeam_code, hometeam_logo, awayteam_id,
-	 * 					awayteam_name, awayteam_code, awayteam_logo, clock,
+	 *  Where game is { id, date, location, homeId, homeName,
+	 *                  homeCode, homeLogo, awayId,
+	 * 					awayName, awayCode, awayLogo, clock,
 	 *  				score }
 	 *
 	 * 	Throws NotFoundError if not found.
@@ -173,7 +173,7 @@ class Player {
 		if (!playerId || !gameId) throw new BadRequestError('Must include a player ID and game ID to get game stats!');
 
 		const gameStatsRes = await db.query(
-			`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS offReb, g.def_reb AS defReb, g.assists, g.fouls, g.steals, g.turnovers, g.blocks
+			`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
             FROM game_stats g
 			JOIN players p ON g.player_id = p.id
             WHERE g.player_id = $1
@@ -494,7 +494,7 @@ class Player {
 	 *
 	 * 	Returns [ {seasonStats}, ... ]
 	 *
-	 * 	Where seasonStats is { player_id, name, points, fgm, fga, fgp, ftm, fta,
+	 * 	Where seasonStats is { id, name, points, fgm, fga, fgp, ftm, fta,
 	 * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists,
 	 * 						   fouls, steals, turnovers, blocks, plusMinus }
 	 *
@@ -536,7 +536,7 @@ class Player {
 		let playersRes;
 		if (lowDate === 'season') {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS offReb, s.def_reb AS defReb, s.total_reb AS totalReb, s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS plusMinus
+				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`
@@ -556,7 +556,7 @@ class Player {
 			}
 
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
@@ -566,7 +566,7 @@ class Player {
 			);
 		} else {
 			playersRes = await db.query(
-				`SELECT p.id AS player_id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS offReb, gs.def_reb AS defReb, gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks
+				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id

@@ -3,7 +3,7 @@
 /** Routes for players. */
 
 const express = require('express');
-const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
 const Player = require('../models/player');
 
 const router = express.Router();
@@ -11,8 +11,8 @@ const router = express.Router();
 /** GET / => { players }
  *
  * Returns [ { player }, { player }, ...]
- *      Where player is { id, name, team_id, team_name, 
- * 						  team_conference, team_division, team_logo, birthday, 
+ *      Where player is { id, name, teamId, teamName,
+ * 						  conference, division, teamLogo, birthday,
  * 						  height, weight, college, number, position }
  *
  * Authorization required: must be logged in
@@ -29,8 +29,8 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 
 /** GET /[playerId] => { player }
  *
- *  Returns { id, name, lastName, team_id, team_name, 
- * 			  team_conference, team_division, team_logo, birthday, 
+ *  Returns { id, name, teamId, teamName,
+ * 			  conference, division, teamLogo, birthday,
  * 			  height, weight, college, number, position }
  *
  *  Authorization required: must be logged in
@@ -47,7 +47,7 @@ router.get('/:playerId', authenticateJWT, ensureLoggedIn, async function (req, r
 
 /** GET /[playerId]/stats/season => { seasonStats }
  *
- *	Returns { player_id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
+ *	Returns { id, name, points, fgm, fga, fgp, ftm, fta, ftp, tpm,
  *            tpa, tpp, offReb, defReb, totalReb, assists, fouls,
  *            steals, turnovers, blocks, plusMinus }
  *
@@ -65,13 +65,13 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 
 /** GET /[playerId]/stats/game/[gameId] => { gameStats }
  *
- *	Returns { player_id, name, game, minutes, points, fgm, fga, fgp,
+ *	Returns { id, name, game, minutes, points, fgm, fga, fgp,
  * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
- * 			  steals, turnovers, blocks }
+ * 			  steals, turnovers, blocks, plusMinus }
  *
- *  Where game is { id, date, location, hometeam_id, hometeam_name,
- *                  hometeam_code, hometeam_logo, awayteam_id,
- * 					awayteam_name, awayteam_code, awayteam_logo, clock,
+ *  Where game is { id, date, location, homeId, homeName,
+ *                  homeCode, homeLogo, awayId,
+ * 					awayName, awayCode, awayLogo, clock,
  *  				score }
  *
  *  Authorization required: must be logged in
@@ -87,24 +87,24 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 });
 
 /** GET /stats/sort
- * 
+ *
  *  Must include stat, time and order in body of request
- * 
+ *
  * 	Stat to sort by can include points, fgm, fga, fgp, ftm, fta, ftp, tpm,
- *       tpa, tpp, offReb, defReb, totalReb (season stats only), assists, 
+ *       tpa, tpp, offReb, defReb, totalReb (season stats only), assists,
  * 		 fouls, steals, turnovers, blocks, plusMinus
- * 
+ *
  * 	Time can be a date string "DD-MM-YYYY", "season", "today", or "yesterday"
- * 
+ *
  * 	Order may be DESC or ASC (case insensitive)
- * 
+ *
  * 	Returns [ {seasonStats}, ... ]
- * 
- * 	Where seasonStats is { player_id, name, points, fgm, fga, 
- * 			               fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, 
- * 						   assists, fouls, steals, turnovers, blocks, 
+ *
+ * 	Where seasonStats is { id, name, points, fgm, fga,
+ * 			               fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb,
+ * 						   totalReb, assists, fouls, steals, turnovers, blocks,
  * 						   plusMinus }
- * 
+ *
  * 	Authorization required: must be logged in
  **/
 
@@ -122,10 +122,10 @@ router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, 
  *
  * 	Updates player season stats
  *
- * 	Authorization required: must be logged in
+ * 	Authorization required: must be admin
  **/
 
-router.patch('/stats/season', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.patch('/stats/season', authenticateJWT, ensureAdmin, async function (req, res, next) {
 	try {
 		await Player.updateSeasonStats();
 		return res.json({ updatePlayerSeasonStats: 'success' });
@@ -140,10 +140,10 @@ router.patch('/stats/season', authenticateJWT, ensureLoggedIn, async function (r
  *
  * 	Include { game: gameId } in request body
  *
- * 	Authorization required: must be logged in
+ * 	Authorization required: must be admin
  **/
 
-router.patch('/stats/games', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.patch('/stats/games', authenticateJWT, ensureAdmin, async function (req, res, next) {
 	try {
 		const { game } = req.body;
 		const { players, gameId } = await Player.updateGameStats(game);

@@ -29,7 +29,7 @@ class Team {
 		return team;
 	}
 
-	/** Given a team_id, return data about that team.
+	/** Given a teamId, return data about that team.
 	 *
 	 *  Returns { id, code, nickname, name, city, logo, conference, division }
 	 *
@@ -67,7 +67,7 @@ class Team {
 
 	/** Given a team_id, return all players on team
 	 *
-	 *  Returns [ { id, firstName, lastName, birthday, height,
+	 *  Returns [ { id, name, birthday, height,
 	 *              weight, college, number, position } ]
 	 *
 	 *  Throws NotFoundError if not found
@@ -75,7 +75,7 @@ class Team {
 
 	static async players(id) {
 		const playersRes = await db.query(
-			`SELECT id, first_name AS firstName, last_name AS lastName, birthday, height, weight, college, number, position
+			`SELECT id, last_name || ', ' || first_name AS name, birthday, height, weight, college, number, position
             FROM players
             WHERE team_id = $1`,
 			[id]
@@ -90,7 +90,7 @@ class Team {
 
 	/** Given a team_id, return all games for current season
 	 *
-	 *  Returns [ { id, date, location, homeTeam, awayTeam, clock, score } ]
+	 *  Returns [ { id, date, location, home, away, clock, score } ]
 	 *
 	 *  Where homeTeam & awayTeam are { id, code, nickname, name, city, logo,
 	 *                                 conference, division }
@@ -100,7 +100,7 @@ class Team {
 
 	static async games(id) {
 		const gamesRes = await db.query(
-			`SELECT id, date, location, home_team AS homeTeam, away_team AS awayTeam, clock, score
+			`SELECT id, date, location, home_team AS home, away_team AS away, clock, score
             FROM games
             WHERE home_team = $1
             OR away_team = $2`,
@@ -113,12 +113,12 @@ class Team {
 
 		// get full home and away team data for each game
 		for (let game of games) {
-			const homeTeam = await this.get(game.hometeam);
-			const awayTeam = await this.get(game.awayteam);
-			delete game.hometeam;
-			delete game.awayteam;
-			game.homeTeam = homeTeam;
-			game.awayTeam = awayTeam;
+			const homeTeam = await this.get(game.home);
+			const awayTeam = await this.get(game.away);
+			delete game.home;
+			delete game.away;
+			game.home = homeTeam;
+			game.away = awayTeam;
 		}
 
 		return games;
@@ -126,10 +126,10 @@ class Team {
 
 	/** Given a team_id, return team stats for current season
 	 *
-	 *  Returns { team_id, name, games, fastBreakPoints, pointsInPaint,
+	 *  Returns { id, name, games, fastBreakPoints, pointsInPaint,
 	 *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
-	 *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
-	 *            fouls, steals, turnovers, blocks, plusMinus }
+	 *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb,
+	 * 			  assists, fouls, steals, turnovers, blocks, plusMinus }
 	 *
 	 * Throws NotFoundError if not found
 	 **/
@@ -137,7 +137,7 @@ class Team {
 	static async stats(id) {
 		const teamData = await this.get(id);
 		const statsRes = await db.query(
-			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS offReb, ts.def_reb AS defReb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+			`SELECT t.id, t.name, ts.games, ts.fast_break_points AS "fastBreakPoints", ts.points_in_paint AS "pointsInPaint", ts.second_chance_points AS "secondChancePoints", ts.points_off_turnovers AS "pointsOffTurnovers", ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS "offReb", ts.def_reb AS "defReb", ts.total_reb AS "totalReb", ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS "plusMinus"
             FROM team_stats ts
 			JOIN teams t ON ts.team_id = t.id
             WHERE team_id = $1`,
@@ -151,15 +151,18 @@ class Team {
 
 	/**	Get stats for all teams
 	 *
-	 * 	Returns { team_id, name, games, fastBreakPoints, pointsInPaint,
-	 *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
-	 *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
-	 *            fouls, steals, turnovers, blocks, plusMinus }
+	 * 	Returns [ {teamStats}, ... ]
+	 *
+	 * 	Where teamStats is { id, name, games, fastBreakPoints, pointsInPaint,
+	 *              		secondChancePoints, pointsOffTurnovers, points,
+	 * 						fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp,
+	 * 						offReb, defReb, totalReb, assists, fouls, steals,
+	 * 						turnovers, blocks, plusMinus }
 	 */
 
 	static async allStats() {
 		const statsRes = await db.query(
-			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS offReb, ts.def_reb AS defReb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+			`SELECT t.id, t.name, ts.games, ts.fast_break_points AS "fastBreakPoints", ts.points_in_paint AS "pointsInPaint", ts.second_chance_points AS "secondChancePoints", ts.points_off_turnovers AS "pointsOffTurnovers", ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS "offReb", ts.def_reb AS "defReb", ts.total_reb AS "totalReb", ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS "plusMinus"
 			FROM team_stats ts
 			JOIN teams t ON ts.team_id = t.id`
 		);
@@ -169,7 +172,7 @@ class Team {
 		return teamStats;
 	}
 
-	/** Returns players sorted by desired stat
+	/** Returns teams sorted by desired stat
 	 *
 	 *  Method to sort by includes: fast_break_points, points_in_paint,
 	 * 	second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm,
@@ -180,11 +183,11 @@ class Team {
 	 *
 	 * 	Returns [ {teamStats}, ... ]
 	 *
-	 * 	Where teamStats is { team_id, name, fastBreakPoints, pointsInPaint,
-	 * 						 secondChancePoints, pointsOffTurnovers, points,
-	 * 						 fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp,
-	 * 						 offReb, defReb, assists, fouls, steals, turnovers,
-	 * 						 blocks, plusMinus }
+	 * 	Where teamStats is { id, name, games, fastBreakPoints, pointsInPaint,
+	 *              		secondChancePoints, pointsOffTurnovers, points,
+	 * 						fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp,
+	 * 						offReb, defReb, totalReb, assists, fouls, steals,
+	 * 						turnovers, blocks, plusMinus }
 	 *
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
@@ -210,6 +213,7 @@ class Team {
 			'tpp',
 			'off_reb',
 			'def_reb',
+			'total_reb',
 			'assists',
 			'fouls',
 			'steals',
@@ -224,7 +228,7 @@ class Team {
 		if (lowOrder != 'asc' && lowOrder != 'desc') throw new BadRequestError('Order must be DESC or ASC');
 
 		const teamsRes = await db.query(
-			`SELECT t.id AS team_id, t.name, ts.games, ts.fast_break_points AS fastBreakPoints, ts.points_in_paint AS pointsInPaint, ts.second_chance_points AS secondChancePoints, ts.points_off_turnovers AS pointsOffTurnovers, ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb, ts.def_reb, ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS plusMinus
+			`SELECT t.id, t.name, ts.games, ts.fast_break_points AS "fastBreakPoints", ts.points_in_paint AS "pointsInPaint", ts.second_chance_points AS "secondChancePoints", ts.points_off_turnovers AS "pointsOffTurnovers", ts.points, ts.fgm, ts.fga, ts.fgp, ts.ftm, ts.fta, ts.ftp, ts.tpm, ts.tpa, ts.tpp, ts.off_reb AS "offReb", ts.def_reb AS "defReb", ts.total_reb AS "totalReb", ts.assists, ts.fouls, ts.steals, ts.turnovers, ts.blocks, ts.plus_minus AS "plusMinus"
 			FROM team_stats ts
 			JOIN teams t ON ts.team_id = t.id
 			ORDER BY ${lowMethod} ${lowOrder}`
@@ -247,8 +251,8 @@ class Team {
 			for (let ts of teamStats) {
 				db.query(
 					`UPDATE team_stats 
-					SET games = $1, fast_break_points = $2, points_in_paint = $3, second_chance_points = $4, points_off_turnovers = $5, points = $6, fgm = $7, fga = $8, fgp = $9, ftm = $10, fta = $11, ftp = $12, tpm = $13, tpa = $14, tpp = $15, off_reb = $16, def_reb = $17, assists = $18, fouls = $19, steals = $20, turnovers = $21, blocks = $22, plus_minus = $23
-					WHERE team_id = $24`,
+					SET games = $1, fast_break_points = $2, points_in_paint = $3, second_chance_points = $4, points_off_turnovers = $5, points = $6, fgm = $7, fga = $8, fgp = $9, ftm = $10, fta = $11, ftp = $12, tpm = $13, tpa = $14, tpp = $15, off_reb = $16, def_reb = $17, total_reb = $18, assists = $19, fouls = $20, steals = $21, turnovers = $22, blocks = $23, plus_minus = $24
+					WHERE team_id = $25`,
 					[
 						ts.games,
 						ts.fastBreakPoints,
@@ -267,6 +271,7 @@ class Team {
 						+ts.tpp,
 						ts.offReb,
 						ts.defReb,
+						ts.defReb + ts.offReb,
 						ts.assists,
 						ts.pFouls,
 						ts.steals,

@@ -3,7 +3,7 @@
 /** Routes for teams. */
 
 const express = require('express');
-const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
 const Team = require('../models/team');
 
 const router = express.Router();
@@ -45,13 +45,13 @@ router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, 
  * 
  * 	Updates team season stats
  * 
- * 	Authorization required: must be logged in
+ * 	Authorization required: must be admin
  **/
 
-router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.patch('/stats', authenticateJWT, ensureAdmin, async function (req, res, next) {
 	try {
 		await Team.updateStats();
-		return res.json({updateTeamStats: 'success'})
+		return res.json({ updateTeamStats: 'success' });
 	} catch (err) {
 		return next(err);
 	}
@@ -63,17 +63,18 @@ router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res
  * 
  * 	Stat to sort by can include games, fast_break_points, points_in_paint, 
  * 	second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, 
- * 	fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers, 
- * 	blocks, plusMinus
+ * 	fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, 
+ * 	steals, turnovers, blocks, plus_minus
  * 
  * 	Order may be DESC or ASC (case insensitive)
  * 
  * 	Returns [ {teamStats}, ... ]
  * 
- * 	Where teamStats is { team_id, name, games, fastBreakPoints, pointsInPaint, 
+ * 	Where teamStats is { id, name, games, fastBreakPoints, pointsInPaint, 
  * 						 secondChancePoints, pointsOffTurnovers, points, fgm, 
- * 						 fga,fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb,
- * 						 assists, fouls, steals, turnovers, blocks, plusMinus }
+ * 						 fga,fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, 
+ * 						 totalReb, assists, fouls, steals, turnovers, blocks, 
+ * 						 plusMinus }
  * 
  * 	Authorization required: must be logged in
  **/
@@ -108,8 +109,8 @@ router.get('/:teamId', authenticateJWT, ensureLoggedIn, async function (req, res
  *
  *  Returns { team, games, fastBreakPoints, pointsInPaint,
  *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
- *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
- *            fouls, steals, turnovers, blocks, plusMinus }
+ *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb 
+ * 			  assists,fouls, steals, turnovers, blocks, plusMinus }
  *
  *  Authorization required: must be logged in
  **/
@@ -125,7 +126,7 @@ router.get('/:teamId/stats', authenticateJWT, ensureLoggedIn, async function (re
 
 /** GET /[teamId]/games => { teamGames }
  *
- *  Returns [ { id, date, location, homeTeam, awayTeam, clock, score } ]
+ *  Returns [ { id, date, location, home, away, clock, score } ]
  *
  *  Authorization required: must be logged in
  **/
@@ -141,7 +142,7 @@ router.get('/:teamId/games', authenticateJWT, ensureLoggedIn, async function (re
 
 /** GET /[teamId]/players => { teamPlayers }
  *
- *  Returns [ { id, firstName, lastName, birthday, height,
+ *  Returns [ { id, name, birthday, height,
  *              weight, college, number, position } ]
  *
  *  Authorization required: must be logged in

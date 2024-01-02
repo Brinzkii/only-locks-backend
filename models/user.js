@@ -20,7 +20,7 @@ class User {
 	static async authenticate(username, password) {
 		// try to find the user first
 		const result = await db.query(
-			`SELECT username, password
+			`SELECT username, password, is_admin AS "isAdmin"
                FROM users
                WHERE username = $1`,
 			[username]
@@ -42,12 +42,12 @@ class User {
 
 	/** Register user with data.
 	 *
-	 * Returns { username, firstName, lastName, email, isAdmin }
+	 * Returns { username, isAdmin }
 	 *
 	 * Throws BadRequestError on duplicates.
 	 **/
 
-	static async register({ username, password }) {
+	static async register({ username, password, isAdmin }) {
 		const duplicateCheck = await db.query(
 			`SELECT username
             FROM users
@@ -63,10 +63,10 @@ class User {
 
 		const result = await db.query(
 			`INSERT INTO users
-            (username, password)
-            VALUES ($1, $2)
-            RETURNING username`,
-			[username, hashedPassword]
+            (username, password, is_admin)
+            VALUES ($1, $2, $3)
+            RETURNING username, is_admin AS "isAdmin"`,
+			[username, hashedPassword, isAdmin]
 		);
 
 		const user = result.rows[0];
@@ -78,7 +78,7 @@ class User {
 
 	static async checkValid(username) {
 		const userRes = await db.query(
-			`SELECT username, wins, losses
+			`SELECT username, wins, losses, is_admin AS "isAdmin"
             FROM users
             WHERE username = $1`,
 			[username]
@@ -267,7 +267,7 @@ class User {
 	 * 	add pick to db
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
+	 * 		Where pick is { id, playerId, gameId, stat, overUnder, value }
 	 *
 	 * 	Throws NotFoundError if user, player or game not found
 	 * 	Throws BadRequest error if stat category invalid
@@ -300,7 +300,7 @@ class User {
 
 		const pickRes = await db.query(
 			`
-		INSERT INTO player_picks (username, player_id, game_id, stat, over_under, value) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, player_id, game_id, stat, over_under, value`,
+		INSERT INTO player_picks (username, player_id, game_id, stat, over_under, value) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, player_id AS "playerId", game_id AS "gameId", stat, over_under AS "overUnder", value`,
 			[username, playerId, gameId, stat, over_under.toUpperCase(), value]
 		);
 
@@ -312,7 +312,7 @@ class User {
 	/**	Given a username and pickId remove pick from DB
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { id, player_id, game_id, stat, over_under, value }
+	 * 		Where pick is { id, playerId, gameId, stat, overUnder, value }
 	 *
 	 * 	Throws NotFoundError if user or pick not found
 	 **/
@@ -320,7 +320,7 @@ class User {
 	static async deletePlayerPick(username, pickId) {
 		await this.checkValid(username);
 		const pickRes = await db.query(
-			`SELECT id, player_id, game_id, stat, over_under, value from player_picks WHERE id = $1`,
+			`SELECT id, player_id AS "playerId", game_id AS "gameId", stat, over_under AS "overUnder", value from player_picks WHERE id = $1`,
 			[pickId]
 		);
 
@@ -367,16 +367,17 @@ class User {
 	/**	Given a username and pickId remove pick from DB
 	 *
 	 * 	Returns { pick }
-	 * 		Where pick is { id, team_id, game_id, win_spread, value }
+	 * 		Where pick is { id, teamId, gameId, winSpread, value }
 	 *
 	 * 	Throws NotFoundError if user or pick not found
 	 **/
 
 	static async deleteTeamPick(username, pickId) {
 		const user = await this.checkValid(username);
-		const pickRes = await db.query(`SELECT id, team_id, game_id, win_spread, value from team_picks WHERE id = $1`, [
-			pickId,
-		]);
+		const pickRes = await db.query(
+			`SELECT id, team_id AS "teamId", game_id AS "gameId", win_spread AS "winSpread", value from team_picks WHERE id = $1`,
+			[pickId]
+		);
 
 		const pick = pickRes.rows[0];
 

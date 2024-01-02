@@ -2,17 +2,48 @@
 
 /** Routes for users. */
 
+const jsonschema = require('jsonschema');
 const express = require('express');
-const { ensureCorrectUser, ensureLoggedIn } = require('../middleware/auth');
+const { ensureCorrectUser, ensureLoggedIn, ensureAdmin, authenticateJWT } = require('../middleware/auth');
+const userRegisterSchema = require('../schemas/userNew.json');
+const { createToken } = require('../helpers/tokens');
 const User = require('../models/user');
 
 const router = express.Router();
 
+/** POST / { user }  => { user, token }
+ *
+ * Adds a new user. This is not the registration endpoint --- instead, this is
+ * only for admin users to add new users. The new user being added can be an
+ * admin.
+ *
+ * This returns the newly created user and an authentication token for them:
+ *  {user: { username, firstName, lastName, email, isAdmin }, token }
+ *
+ * Authorization required: admin
+ **/
+
+router.post('/', ensureAdmin, async function (req, res, next) {
+	try {
+		const validator = jsonschema.validate(req.body, userRegisterSchema);
+		if (!validator.valid) {
+			const errs = validator.errors.map((e) => e.stack);
+			throw new BadRequestError(errs);
+		}
+
+		const user = await User.register(req.body);
+		const token = createToken(user);
+		return res.status(201).json({ user, token });
+	} catch (err) {
+		return next(err);
+	}
+});
+
 /** GET /[username] => { user }
  *
  * Returns { username, wins, losses, followedTeams, followedPlayers }
- *   where followedTeams is [team_id, team_id, ...]
- *   where followedPlayers is [player_id, player_id, ...]
+ *   where followedTeams is [ {team}, {team}, ...]
+ *   where followedPlayers is [ {player}, {player}, ...]
  *
  * Authorization required: none
  **/
