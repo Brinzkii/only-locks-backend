@@ -136,19 +136,23 @@ router.patch('/stats/season', authenticateJWT, ensureLoggedIn, async function (r
 
 /** PATCH /stats/games =>{ updatePlayerGameStats }
  *
- * 	Updates player game stats
+ * 	Updates all player game stats for a given game
  *
- * 	Optionally send method: 'all' in request body, otherwise defaults to three
- * 	day span to reduce API calls
+ * 	Include { game: gameId } in request body
  *
  * 	Authorization required: must be logged in
  **/
 
 router.patch('/stats/games', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const { method } = req.body || 'default';
-		await Player.updateGameStats(method);
-		return res.json({ updatePlayerGameStats: 'success' });
+		const { game } = req.body;
+		const { players, gameId } = await Player.updateGameStats(game);
+		const updatePlayerGameStats = {
+			status: 'success',
+			gameId,
+			players,
+		};
+		return res.json({ updatePlayerGameStats });
 	} catch (err) {
 		return next(err);
 	}

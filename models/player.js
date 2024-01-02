@@ -191,6 +191,95 @@ class Player {
 		return gameStats;
 	}
 
+	/** Update game stats for players by gameId */
+
+	static async updateGameStats(gameId) {
+		if (!gameId) throw new BadRequestError('Must include a game ID to update player game stats!');
+
+		const game = await Game.checkValid(gameId);
+		const playersRes = await db.query(
+			`SELECT id, last_name || ', ' || first_name AS name FROM players WHERE team_id = $1 OR team_id = $2`,
+			[game.home_team, game.away_team]
+		);
+		const players = playersRes.rows;
+
+		for (let player of players) {
+			await delay(150);
+			let URL = BASE_URL + `players/statistics?id=${player.id}&game=${game.id}&season=2023`;
+			const response = await axios.get(URL, { headers });
+			let playerStats = response.data.response;
+			const ps = playerStats[0];
+			// If no stats returned skip, otherwise if game stats for player exist in DB update, else insert
+
+			const statsExist = await db.query(`SELECT id from game_stats where player_id = $1 AND game_id = $2`, [
+				player.id,
+				game.id,
+			]);
+
+			if (statsExist.rows.length && ps) {
+				db.query(
+					`UPDATE game_stats
+					SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
+					WHERE player_id = $20
+					AND game_id = $21`,
+					[
+						+ps.min || 0,
+						ps.points || 0,
+						ps.fgm || 0,
+						ps.fga || 0,
+						+ps.fgp || 0,
+						ps.ftm || 0,
+						ps.fta || 0,
+						+ps.ftp || 0,
+						ps.tpm || 0,
+						ps.tpa || 0,
+						+ps.tpp || 0,
+						ps.offReb || 0,
+						ps.defReb || 0,
+						ps.assists || 0,
+						ps.pFouls || 0,
+						ps.steals || 0,
+						ps.turnovers || 0,
+						ps.blocks || 0,
+						+ps.plusMinus || 0,
+						player.id,
+						game.id,
+					]
+				);
+				console.log(`Updated stats for ${player.name} from Game: ${ps.game.id}`);
+			} else if (ps) {
+				db.query(
+					'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+					[
+						player.id,
+						game.id,
+						+ps.min || 0,
+						ps.points || 0,
+						ps.fgm || 0,
+						ps.fga || 0,
+						+ps.fgp || 0,
+						ps.ftm || 0,
+						ps.fta || 0,
+						+ps.ftp || 0,
+						ps.tpm || 0,
+						ps.tpa || 0,
+						+ps.tpp || 0,
+						ps.offReb || 0,
+						ps.defReb || 0,
+						ps.assists || 0,
+						ps.pFouls || 0,
+						ps.steals || 0,
+						ps.turnovers || 0,
+						ps.blocks || 0,
+						+ps.plusMinus || 0,
+					]
+				);
+				console.log(`Added stats for ${player.name} from Game: ${ps.game.id}`);
+			}
+		}
+		return { players, gameId: game.id };
+	}
+
 	/** Update game stats for yesterday, current day and next day
 	 *
 	 * 	Optionally, pass in "all" to update all game stats
@@ -198,7 +287,7 @@ class Player {
 	 * 	Throws BadRequestError if bad method used.
 	 */
 
-	static async updateGameStats(method = 'default') {
+	static async adminUpdateGameStats(method = 'default') {
 		const lowMethod = method.toLowerCase();
 		if (lowMethod != 'all' && lowMethod != 'default') {
 			throw new BadRequestError(`Must pass in "all" or nothing to update game stats`);
@@ -290,7 +379,6 @@ class Player {
 					}
 				}
 			}
-			console.log('All player stats added / updated!');
 		} else {
 			// Get only games occurring yesterday, today or tomorrow
 			const yesterday = moment().subtract(1, 'days');
@@ -390,6 +478,7 @@ class Player {
 				}
 			}
 		}
+		console.log('All player stats added / updated!');
 		return;
 	}
 
