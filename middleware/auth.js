@@ -18,8 +18,7 @@ function authenticateJWT(req, res, next) {
 	try {
 		const authHeader = req.headers && req.headers.authorization;
 		if (authHeader) {
-			const token = authHeader.replace(/^[Bb]earer /, '').trim();
-			res.locals.user = jwt.verify(token, SECRET_KEY);
+			res.locals.user = jwt.verify(authHeader, SECRET_KEY);
 		}
 		return next();
 	} catch (err) {
@@ -41,7 +40,7 @@ function ensureLoggedIn(req, res, next) {
 	}
 }
 
-/** Middleware to use when they be logged in as an admin user.
+/** Middleware to use when they are logged in as an admin user.
  *
  *  If not, raises Unauthorized.
  */

@@ -74,23 +74,6 @@ router.post('/:username/players/:playerId', ensureCorrectUser, async function (r
 	}
 });
 
-/** POST /[username]/teams/[teamId]  { state } => { application }
- *
- * Returns { user }
- *
- * Authorization required: same-user-as-:username
- **/
-
-router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
-	try {
-		const teamId = +req.params.teamId;
-		const user = await User.follow(req.params.username, teamId);
-		return res.json({ user });
-	} catch (err) {
-		return next(err);
-	}
-});
-
 /** DELETE /[username]/[playerId]  { state } => { application }
  *
  * Returns { user }
@@ -102,6 +85,23 @@ router.delete('/:username/players/:playerId', ensureCorrectUser, async function 
 	try {
 		const playerId = +req.params.playerId;
 		const user = await User.unfollow(req.params.username, playerId);
+		return res.json({ user });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** POST /[username]/teams/[teamId]  { state } => { application }
+ *
+ * Returns { user }
+ *
+ * Authorization required: same-user-as-:username
+ **/
+
+router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
+	try {
+		const teamId = +req.params.teamId;
+		const user = await User.follow(req.params.username, teamId);
 		return res.json({ user });
 	} catch (err) {
 		return next(err);
