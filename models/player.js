@@ -3,6 +3,15 @@ const axios = require('axios');
 const { BadRequestError, NotFoundError } = require('../expressError');
 const Team = require('./team');
 const Game = require('./game');
+const API_KEY = require('../secrets');
+const moment = require('moment');
+
+const BASE_URL = 'https://v2.nba.api-sports.io/';
+const headers = {
+	'x-rapidapi-key': API_KEY || process.env.API_KEY,
+	'x-rapidapi-host': 'v2.nba.api-sports.io',
+};
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 /** Related functions for players */
 
@@ -143,7 +152,7 @@ class Player {
 			);
 			console.log(`Updated season stats for ${player.name}!`);
 		}
-		return true;
+		return;
 	}
 
 	/** Given a player_id and game_id, return game stats for player
@@ -182,6 +191,208 @@ class Player {
 		return gameStats;
 	}
 
+	/** Update game stats for yesterday, current day and next day
+	 *
+	 * 	Optionally, pass in "all" to update all game stats
+	 *
+	 * 	Throws BadRequestError if bad method used.
+	 */
+
+	static async updateGameStats(method = 'default') {
+		const lowMethod = method.toLowerCase();
+		if (lowMethod != 'all' && lowMethod != 'default') {
+			throw new BadRequestError(`Must pass in "all" or nothing to update game stats`);
+		}
+
+		if (lowMethod === 'all') {
+			// Get all players currently in DB
+			const response = await db.query('SELECT id FROM players ORDER BY last_name');
+			let players = response.rows;
+			// Request each players stats - this returns all games and their stats for the season
+			for (let player of players) {
+				await delay(250);
+				let URL = BASE_URL + `players/statistics?id=${player.id}&season=2023`;
+				const response = await axios.get(URL, { headers });
+				let playerStats = response.data.response;
+				for (let ps of playerStats) {
+					// Only add stats if game is in DB
+					const validGame = await db.query('SELECT id FROM games WHERE id = $1', [ps.game.id]);
+					if (validGame.rows.length) {
+						// If game stats for player exist update, otherwise insert
+						const statsExist = await db.query(
+							`SELECT id from game_stats where player_id = $1 AND game_id = $2`,
+							[player.id, ps.game.id]
+						);
+						if (statsExist.rows.length) {
+							db.query(
+								`UPDATE game_stats
+								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
+								WHERE player_id = $20
+								AND game_id = $21`,
+								[
+									+ps.min || 0,
+									ps.points || 0,
+									ps.fgm || 0,
+									ps.fga || 0,
+									+ps.fgp || 0,
+									ps.ftm || 0,
+									ps.fta || 0,
+									+ps.ftp || 0,
+									ps.tpm || 0,
+									ps.tpa || 0,
+									+ps.tpp || 0,
+									ps.offReb || 0,
+									ps.defReb || 0,
+									ps.assists || 0,
+									ps.pFouls || 0,
+									ps.steals || 0,
+									ps.turnovers || 0,
+									ps.blocks || 0,
+									+ps.plusMinus || 0,
+									player.id,
+									ps.game.id,
+								]
+							);
+							console.log(
+								`Updated stats for ${ps.player.lastname}, ${ps.player.firstname} from Game: ${ps.game.id}`
+							);
+						} else {
+							db.query(
+								'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+								[
+									ps.player.id,
+									ps.game.id,
+									+ps.min || 0,
+									ps.points || 0,
+									ps.fgm || 0,
+									ps.fga || 0,
+									+ps.fgp || 0,
+									ps.ftm || 0,
+									ps.fta || 0,
+									+ps.ftp || 0,
+									ps.tpm || 0,
+									ps.tpa || 0,
+									+ps.tpp || 0,
+									ps.offReb || 0,
+									ps.defReb || 0,
+									ps.assists || 0,
+									ps.pFouls || 0,
+									ps.steals || 0,
+									ps.turnovers || 0,
+									ps.blocks || 0,
+									+ps.plusMinus || 0,
+								]
+							);
+							console.log(
+								`Added stats for ${ps.player.lastname}, ${ps.player.firstname} from Game: ${ps.game.id}`
+							);
+						}
+					}
+				}
+			}
+			console.log('All player stats added / updated!');
+		} else {
+			// Get only games occurring yesterday, today or tomorrow
+			const yesterday = moment().subtract(1, 'days');
+			const tomorrow = moment().add(1, 'days');
+			const gamesRes = await db.query(
+				`SELECT id, home_team, away_team FROM games WHERE date >= $1 AND date <= $2`,
+				[yesterday.format('LL'), tomorrow.format('LL')]
+			);
+			const games = gamesRes.rows;
+
+			// Get all players in a game
+			for (let game of games) {
+				const playersRes = await db.query(`SELECT id FROM players WHERE team_id = $1 OR team_id = $2`, [
+					game.home_team,
+					game.away_team,
+				]);
+				const players = playersRes.rows;
+
+				// For each player, request game stats from external API and either update or insert into DB
+				for (let player of players) {
+					await delay(150);
+					let URL = BASE_URL + `players/statistics?id=${player.id}&game=${game.id}&season=2023`;
+					const response = await axios.get(URL, { headers });
+					let playerStats = response.data.response;
+					const ps = playerStats[0];
+					// If game stats for player exist update, otherwise insert
+
+					const statsExist = await db.query(
+						`SELECT id from game_stats where player_id = $1 AND game_id = $2`,
+						[player.id, game.id]
+					);
+
+					if (statsExist.rows.length && ps) {
+						db.query(
+							`UPDATE game_stats
+								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
+								WHERE player_id = $20
+								AND game_id = $21`,
+							[
+								+ps.min || 0,
+								ps.points || 0,
+								ps.fgm || 0,
+								ps.fga || 0,
+								+ps.fgp || 0,
+								ps.ftm || 0,
+								ps.fta || 0,
+								+ps.ftp || 0,
+								ps.tpm || 0,
+								ps.tpa || 0,
+								+ps.tpp || 0,
+								ps.offReb || 0,
+								ps.defReb || 0,
+								ps.assists || 0,
+								ps.pFouls || 0,
+								ps.steals || 0,
+								ps.turnovers || 0,
+								ps.blocks || 0,
+								+ps.plusMinus || 0,
+								player.id,
+								game.id,
+							]
+						);
+						console.log(
+							`Updated stats for ${ps.player.lastname}, ${ps.player.firstname} from Game: ${ps.game.id}`
+						);
+					} else if (ps) {
+						db.query(
+							'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+							[
+								player.id,
+								game.id,
+								+ps.min || 0,
+								ps.points || 0,
+								ps.fgm || 0,
+								ps.fga || 0,
+								+ps.fgp || 0,
+								ps.ftm || 0,
+								ps.fta || 0,
+								+ps.ftp || 0,
+								ps.tpm || 0,
+								ps.tpa || 0,
+								+ps.tpp || 0,
+								ps.offReb || 0,
+								ps.defReb || 0,
+								ps.assists || 0,
+								ps.pFouls || 0,
+								ps.steals || 0,
+								ps.turnovers || 0,
+								ps.blocks || 0,
+								+ps.plusMinus || 0,
+							]
+						);
+						console.log(
+							`Added stats for ${ps.player.lastname}, ${ps.player.firstname} from Game: ${ps.game.id}`
+						);
+					}
+				}
+			}
+		}
+		return;
+	}
+
 	/** Returns players sorted by desired stat
 	 *
 	 *  Method to sort by includes: points, fgm, fga, fgp, ftm, fta, ftp,
@@ -195,8 +406,8 @@ class Player {
 	 * 	Returns [ {seasonStats}, ... ]
 	 *
 	 * 	Where seasonStats is { player_id, name, points, fgm, fga, fgp, ftm, fta,
-	 * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
-	 *                         steals, turnovers, blocks, plusMinus }
+	 * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists,
+	 * 						   fouls, steals, turnovers, blocks, plusMinus }
 	 *
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/

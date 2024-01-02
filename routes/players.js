@@ -108,7 +108,7 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  * 	Authorization required: must be logged in
  **/
 
-router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
 		const { time, stat, order } = req.body;
 		const sortedStats = await Player.sortByStats(time, stat, order);
@@ -118,20 +118,40 @@ router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, 
 	}
 });
 
-/** PATCH /stats =>{ updatePlayerSeasonStats } 
- * 
+/** PATCH /stats/season =>{ updatePlayerSeasonStats }
+ *
  * 	Updates player season stats
- * 
+ *
  * 	Authorization required: must be logged in
  **/
 
-router.patch('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.patch('/stats/season', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		await Player.updateSeasonStats()
-		return res.json({updatePlayerSeasonStats: 'success'})
+		await Player.updateSeasonStats();
+		return res.json({ updatePlayerSeasonStats: 'success' });
 	} catch (err) {
-		return next(err)
+		return next(err);
 	}
-})
+});
+
+/** PATCH /stats/games =>{ updatePlayerGameStats }
+ *
+ * 	Updates player game stats
+ *
+ * 	Optionally send method: 'all' in request body, otherwise defaults to three
+ * 	day span to reduce API calls
+ *
+ * 	Authorization required: must be logged in
+ **/
+
+router.patch('/stats/games', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const { method } = req.body || 'default';
+		await Player.updateGameStats(method);
+		return res.json({ updatePlayerGameStats: 'success' });
+	} catch (err) {
+		return next(err);
+	}
+});
 
 module.exports = router;
