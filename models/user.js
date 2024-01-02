@@ -93,11 +93,13 @@ class User {
 
 	/** Given a username, return data about user.
 	 *
-	 *  Returns { username, wins, losses, followedTeams, followedPlayers }
+	 *  Returns { username, wins, losses, followedTeams, followedPlayers,
+	 * 		      picks }
 	 *   where followedTeams is [ { id, code, nickname, name, city, logo,
 	 *                              conference, division } ]
 	 *   where followedPlayers is [ { id, firstName, lastName, birthday, height,
 	 *                               weight, college, number, position, team } ]
+	 * 	 Where picks is { playerPicks, teamPicks }
 	 *
 	 * Throws NotFoundError if user not found.
 	 **/
@@ -136,6 +138,9 @@ class User {
 		}
 
 		user.followedPlayers = userFavPlayers;
+
+		let picks = await this.picks(username);
+		user.picks = picks;
 
 		return user;
 	}
