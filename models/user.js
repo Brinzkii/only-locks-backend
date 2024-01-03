@@ -97,7 +97,7 @@ class User {
 	 * 		      picks }
 	 *   where followedTeams is [ { id, code, nickname, name, city, logo,
 	 *                              conference, division } ]
-	 *   where followedPlayers is [ { id, firstName, lastName, birthday, height,
+	 *   where followedPlayers is [ { id, name, birthday, height,
 	 *                               weight, college, number, position, team } ]
 	 * 	 Where picks is { playerPicks, teamPicks }
 	 *
@@ -107,37 +107,26 @@ class User {
 	static async get(username) {
 		const user = await this.checkValid(username);
 
-		const userFavTeamIds = await db.query(
-			`SELECT team_id AS id
-            FROM followed_teams
+		const userFavTeams = await db.query(
+			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, t.division 
+            FROM followed_teams ft
+			JOIN teams t ON ft.team_id = t.id
             WHERE username = $1`,
 			[username]
 		);
 
-		let userFavTeams = [];
+		user.followedTeams = userFavTeams.rows;
 
-		for (let team of userFavTeamIds.rows) {
-			const teamInfo = await Team.get(team.id);
-			userFavTeams.push(teamInfo);
-		}
-
-		user.followedTeams = userFavTeams;
-
-		const userFavPlayerIds = await db.query(
-			`SELECT player_id AS id
-            FROM followed_players
+		const userFavPlayers = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, p.birthday, p.height, p.weight, p.college, p.number, p.position, t.name AS team
+            FROM followed_players fp
+			JOIN players p ON fp.player_id = p.id
+			JOIN teams t ON p.team_id = t.id
             WHERE username = $1`,
 			[username]
 		);
 
-		let userFavPlayers = [];
-
-		for (let player of userFavPlayerIds.rows) {
-			const playerInfo = await Player.get(player.id);
-			userFavPlayers.push(playerInfo);
-		}
-
-		user.followedPlayers = userFavPlayers;
+		user.followedPlayers = userFavPlayers.rows;
 
 		let picks = await this.picks(username);
 		user.picks = picks;
