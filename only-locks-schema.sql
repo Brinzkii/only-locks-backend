@@ -31,6 +31,18 @@ CREATE TABLE players (
         REFERENCES teams ON DELETE CASCADE
 );
 
+CREATE TABLE games (
+    id INTEGER PRIMARY KEY,
+    date DATE NOT NULL,
+    location TEXT NOT NULL,
+    home_team INTEGER
+        REFERENCES teams ON DELETE CASCADE,
+    away_team INTEGER
+        REFERENCES teams ON DELETE CASCADE,
+    clock TEXT,
+    score TEXT
+);
+
 CREATE TABLE player_picks (
     id SERIAL PRIMARY KEY,
     username TEXT   
@@ -128,18 +140,6 @@ CREATE TABLE season_stats (
     turnovers INTEGER NOT NULL,
     blocks INTEGER NOT NULL,
     plus_minus INTEGER NOT NULL
-);
-
-CREATE TABLE games (
-    id INTEGER PRIMARY KEY,
-    date DATE NOT NULL,
-    location TEXT NOT NULL,
-    home_team INTEGER
-        REFERENCES teams ON DELETE CASCADE,
-    away_team INTEGER
-        REFERENCES teams ON DELETE CASCADE,
-    clock TEXT,
-    score TEXT
 );
 
 CREATE TABLE game_stats (
