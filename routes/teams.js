@@ -126,7 +126,7 @@ router.get('/:teamId/stats', authenticateJWT, ensureLoggedIn, async function (re
 
 /** GET /[teamId]/stats/top 
  * 
- * 	Returns { teamId, points, rebounds, blocks, assists }
+ * 	Returns { teamId, points, rebounds, blocks, assists, steals, plusMinus }
  * 
  * 	Authorization Required: must be logged in
  **/

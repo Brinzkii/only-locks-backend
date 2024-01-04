@@ -90,7 +90,7 @@ class Team {
 
 	/** Given a teamId return top performers on team
 	 *
-	 * 	Returns { teamId, points, rebounds, blocks, assists }
+	 * 	Returns { teamId, points, rebounds, blocks, assists, steals, plusMinus }
 	 *
 	 *  Throws NotFoundError if not found.
 	 */
@@ -149,12 +149,38 @@ class Team {
 			[team.id]
 		);
 
+		const stealerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.steals AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
+			WHERE p.team_id = $1
+			GROUP BY p.id, ss.steals
+			ORDER BY ss.steals DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
+		const overAchieverRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.plus_minus AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
+			WHERE p.team_id = $1
+			GROUP BY p.id, ss.plus_minus
+			ORDER BY ss.plus_minus DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
 		const topPerformers = {
 			team: team.id,
 			points: scorerRes.rows[0],
 			totalReb: rebounderRes.rows[0],
 			assists: assisterRes.rows[0],
 			blocks: blockerRes.rows[0],
+			steals: stealerRes.rows[0],
+			plusMinus: overAchieverRes.rows[0],
 		};
 		return topPerformers;
 	}

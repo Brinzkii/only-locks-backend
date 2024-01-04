@@ -71,8 +71,10 @@ router.get('/:gameId/stats', authenticateJWT, ensureLoggedIn, async function (re
  * 
  * 	Returns { game, home, away }
 	 * 		Where home and away are { points: { id, name, value }, rebounds:
-	 * 				                { id, name, value }, assists: { id, name,
-	 * 								  value }, blocks: { id, name, value }  }
+	 * 				                  { id, name, value }, assists: { id, name,
+	 * 								  value }, blocks: { id, name, value },
+	 * 								  steals: { id, name, value }, plusMinus:
+	 * 								  { id, name, value } }
  * 
  *  Authorization required: must be logged in
  */

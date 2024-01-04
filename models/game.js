@@ -123,7 +123,9 @@ class Game {
 	 * 	Returns { game, home, away }
 	 * 		Where home and away are { points: { id, name, value }, rebounds:
 	 * 				                { id, name, value }, assists: { id, name,
-	 * 								  value }, blocks: { id, name, value }  }
+	 * 								  value }, blocks: { id, name, value },
+	 * 								  steals: { id, name, value }, plusMinus:
+	 * 								  { id, name, value } }
 	 *
 	 *	Throws NotFoundError if not found.
 	 **/
@@ -222,6 +224,52 @@ class Game {
 			[game.id, game.away_team]
 		);
 
+		// Collect top stealer from each team
+		const homeStealerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY steals DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayStealerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY steals DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
+		// Collect top plus/minus from each team
+		const homePositiveRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY plus_minus DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayPositiveRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY plus_minus DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
 		const topPerformers = {
 			game: game.id,
 			home: {
@@ -229,12 +277,16 @@ class Game {
 				totalReb: homeRebounderRes.rows[0],
 				assists: homeAssisterRes.rows[0],
 				blocks: homeBlockerRes.rows[0],
+				steals: homeStealerRes.rows[0],
+				plusMinus: homePositiveRes.rows[0],
 			},
 			away: {
 				points: awayScorerRes.rows[0],
 				totalReb: awayRebounderRes.rows[0],
 				assists: awayAssisterRes.rows[0],
 				blocks: awayBlockerRes.rows[0],
+				steals: awayStealerRes.rows[0],
+				plusMinus: awayPositiveRes.rows[0],
 			},
 		};
 		return topPerformers;
