@@ -99,44 +99,52 @@ class Team {
 		const team = await this.checkValid(id);
 		// Collect top scorer
 		const scorerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.points AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.points AS value
 			FROM season_stats ss
 			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
 			WHERE p.team_id = $1
-			ORDER BY points DESC
+			GROUP BY p.id, ss.points
+			ORDER BY ss.points DESC
 			LIMIT 1`,
 			[team.id]
 		);
 
 		// Collect top rebounder
 		const rebounderRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.total_reb AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.total_reb AS value
 			FROM season_stats ss
 			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
 			WHERE p.team_id = $1
-			ORDER BY total_reb DESC
+			GROUP BY p.id, ss.total_reb
+			ORDER BY ss.total_reb DESC
 			LIMIT 1`,
 			[team.id]
 		);
 
 		// Collect top assister
 		const assisterRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.assists AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.assists AS value
 			FROM season_stats ss
 			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
 			WHERE p.team_id = $1
-			ORDER BY assists DESC
+			GROUP BY p.id, ss.assists
+			ORDER BY ss.assists DESC
 			LIMIT 1`,
 			[team.id]
 		);
 
 		// Collect top blocker
 		const blockerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.blocks AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, COUNT(gs.id) AS games, ss.blocks AS value
 			FROM season_stats ss
 			JOIN players p ON ss.player_id = p.id
+			JOIN game_stats gs ON ss.player_id = gs.player_id
 			WHERE p.team_id = $1
-			ORDER BY blocks DESC
+			GROUP BY p.id, ss.blocks
+			ORDER BY ss.blocks DESC
 			LIMIT 1`,
 			[team.id]
 		);
