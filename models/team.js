@@ -65,7 +65,7 @@ class Team {
 		return teamsRes.rows;
 	}
 
-	/** Given a team_id, return all players on team
+	/** Given a teamId, return all players on team
 	 *
 	 *  Returns [ { id, name, birthday, height,
 	 *              weight, college, number, position } ]
@@ -86,6 +86,69 @@ class Team {
 		if (!players) throw new NotFoundError(`No players found on team: ${id}`);
 
 		return players;
+	}
+
+	/** Given a teamId return top performers on team
+	 *
+	 * 	Returns { teamId, points, rebounds, blocks, assists }
+	 *
+	 *  Throws NotFoundError if not found.
+	 */
+
+	static async topPerformers(id) {
+		const team = await this.checkValid(id);
+		// Collect top scorer
+		const scorerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.points AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			WHERE p.team_id = $1
+			ORDER BY points DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
+		// Collect top rebounder
+		const rebounderRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.total_reb AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			WHERE p.team_id = $1
+			ORDER BY total_reb DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
+		// Collect top assister
+		const assisterRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.assists AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			WHERE p.team_id = $1
+			ORDER BY assists DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
+		// Collect top blocker
+		const blockerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, ss.blocks AS value
+			FROM season_stats ss
+			JOIN players p ON ss.player_id = p.id
+			WHERE p.team_id = $1
+			ORDER BY blocks DESC
+			LIMIT 1`,
+			[team.id]
+		);
+
+		const topPerformers = {
+			team: team.id,
+			points: scorerRes.rows[0],
+			totalReb: rebounderRes.rows[0],
+			assists: assisterRes.rows[0],
+			blocks: blockerRes.rows[0],
+		};
+		return topPerformers;
 	}
 
 	/** Given a team_id, return all games for current season

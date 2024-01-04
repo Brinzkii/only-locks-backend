@@ -124,6 +124,23 @@ router.get('/:teamId/stats', authenticateJWT, ensureLoggedIn, async function (re
 	}
 });
 
+/** GET /[teamId]/stats/top 
+ * 
+ * 	Returns { teamId, points, rebounds, blocks, assists }
+ * 
+ * 	Authorization Required: must be logged in
+ **/
+
+router.get('/:teamId/stats/top', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const teamId = req.params.teamId
+		const topPerformers = await Team.topPerformers(teamId)
+		return res.json({topPerformers})
+	} catch (err) {
+		return next(err)
+	}
+})
+
 /** GET /[teamId]/games => { teamGames }
  *
  *  Returns [ { id, date, location, home, away, clock, score } ]
