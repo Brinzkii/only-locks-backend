@@ -168,3 +168,34 @@ CREATE TABLE game_stats (
     blocks INTEGER NOT NULL,
     plus_minus INTEGER NOT NULL
 );
+
+CREATE TABLE team_game_stats (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER
+        REFERENCES teams ON DELETE CASCADE,
+    game_id INTEGER
+        REFERENCES games ON DELETE CASCADE,
+    fast_break_points INTEGER NOT NULL,
+    points_in_paint INTEGER NOT NULL,
+    second_chance_points INTEGER NOT NULL,
+    points_off_turnovers INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    fgm INTEGER NOT NULL,
+    fga INTEGER NOT NULL,
+    fgp REAL NOT NULL,
+    ftm INTEGER NOT NULL,
+    fta INTEGER NOT NULL,
+    ftp REAL NOT NULL,
+    tpm INTEGER NOT NULL,
+    tpa INTEGER NOT NULL,
+    tpp REAL NOT NULL,
+    off_reb INTEGER NOT NULL,
+    def_reb INTEGER NOT NULL,
+    total_reb INTEGER NOT NULL,
+    assists INTEGER NOT NULL,
+    fouls INTEGER NOT NULL,
+    steals INTEGER NOT NULL,
+    turnovers INTEGER NOT NULL,
+    blocks INTEGER NOT NULL,
+    plus_minus INTEGER NOT NULL
+);

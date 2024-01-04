@@ -46,6 +46,27 @@ router.get('/:gameId', authenticateJWT, ensureLoggedIn, async function (req, res
 	}
 });
 
+/** GET /[gameId]/stats => { teamStats } 
+ * 
+ * 	Returns { gameId, score, home, away }
+ * 		Where home and away are { id, name, fast_break_points, points_in_paint, 
+ * 		second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, 
+ * 		fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, 
+ * 		steals, turnovers, blocks, plus_minus }
+ * 
+ * 	Authorization required: must be logged in
+ **/
+
+router.get('/:gameId/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const gameId = req.params.gameId
+		const gameStats = await Game.getStats(gameId)
+		return res.json({gameStats})
+	} catch (err) {
+		return next(err)
+	}
+})
+
 /** GET /filter/date/[date]=> { games }
  *
  *  Can pass in a date string "DD-MM-YYYY", "today", "tomorrow", "yesterday"

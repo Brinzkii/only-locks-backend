@@ -230,6 +230,56 @@ async function getGameStats() {
 	}
 }
 
+async function getTeamGameStats() {
+	try {
+		const response = await db.query('SELECT id FROM games ORDER BY date ASC');
+		let games = response.rows;
+		for (let game of games) {
+			let URL = BASE_URL + `games/statistics?id=${game.id}`;
+			const response = await axios.get(URL, { headers });
+			const teamStats = response.data.response;
+			for (let ts of teamStats) {
+				const stats = ts.statistics;
+				db.query(
+					'INSERT INTO team_game_stats (team_id, game_id, fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
+					[
+						ts.team.id,
+						game.id,
+						stats[0].fastBreakPoints || 0,
+						stats[0].pointsInPaint || 0,
+						stats[0].secondChancePoints || 0,
+						stats[0].pointsOffTurnovers || 0,
+						stats[0].points || 0,
+						stats[0].fgm || 0,
+						stats[0].fga || 0,
+						+stats[0].fgp || 0,
+						stats[0].ftm || 0,
+						stats[0].fta || 0,
+						+stats[0].ftp || 0,
+						stats[0].tpm || 0,
+						stats[0].tpa || 0,
+						+stats[0].tpp || 0,
+						stats[0].offReb || 0,
+						stats[0].defReb || 0,
+						stats[0].offReb + stats[0].defReb || 0,
+						stats[0].assists || 0,
+						stats[0].pFouls || 0,
+						stats[0].steals || 0,
+						stats[0].turnovers || 0,
+						stats[0].blocks || 0,
+						stats[0].plusMinus || 0,
+					]
+				);
+
+				console.log(`Added ${ts.team.name} stats for game: ${game.id}`);
+			}
+			await delay(250);
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+
 async function populateSeasonStats() {
 	try {
 		// Get all players currently in DB
@@ -281,37 +331,41 @@ async function populateSeasonStats() {
 }
 
 async function seed() {
-	await getTeams();
+	// await getTeams();
 
-	console.log('All teams added!');
+	// console.log('All teams added!');
 
-	await delay(30000);
+	// await delay(30000);
 
-	await getPlayers();
+	// await getPlayers();
 
-	console.log('All players added!');
+	// console.log('All players added!');
 
-	await delay(30000);
+	// await delay(30000);
 
-	await getGames();
+	// await getGames();
 
-	console.log('All games added!');
+	// console.log('All games added!');
 
-	await delay(30000);
+	// await delay(30000);
 
-	await getTeamStats();
+	// await getTeamStats();
 
-	console.log('All team stats added!');
+	// console.log('All team stats added!');
 
-	await delay(30000);
+	// await delay(30000);
 
-	await getGameStats();
+	// await getGameStats();
 
-	console.log('All game stats added!');
+	// console.log('All game stats added!');
 
-	await populateSeasonStats();
+	// await populateSeasonStats();
 
-	console.log('All player season stats populated!');
+	// console.log('All player season stats populated!');
+
+	await getTeamGameStats();
+
+	console.log('Game stats added for all teams!');
 	return;
 }
 

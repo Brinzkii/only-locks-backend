@@ -74,6 +74,50 @@ class Game {
 		return games;
 	}
 
+	/** Returns team stats for a given game
+	 *
+	 * 	Returns { gameId, score, home, away }
+	 *
+	 * 		Where home and away are { id, name, fast_break_points,
+	 * 		points_in_paint, second_chance_points, points_off_turnovers,
+	 * 		points, fgm, fga, fgp,ftm, fta, ftp, tpm, tpa, tpp, off_reb,
+	 * 		def_reb, total_reb, assists, fouls,steals, turnovers, blocks,
+	 * 		plus_minus }
+	 *
+	 * 	Throws NotFoundError if not found
+	 **/
+
+	static async getStats(gameId) {
+		const game = await this.checkValid(gameId);
+		// Collect home team stats
+		const homeStatsRes = await db.query(
+			`SELECT t.id, t.name, tgs.fast_break_points AS "fastBreakPoints", tgs.points_in_paint AS "pointsInPaint", tgs.second_chance_points AS "secondChancePoints", tgs.points_off_turnovers AS "pointsOffTurnovers", tgs.points, tgs.fgm, tgs.fga, tgs.fgp, tgs.ftm, tgs.fta, tgs.ftp, tgs.tpm, tgs.tpa, tgs.tpp, tgs.off_reb AS "offReb", tgs.def_reb AS "defReb", tgs.total_reb AS "totalReb", tgs.assists, tgs.fouls, tgs.steals, tgs.turnovers, tgs.blocks, tgs.plus_minus AS "plusMinus"
+			FROM team_game_stats tgs
+			JOIN teams t ON tgs.team_id = t.id
+			WHERE game_id = $1
+			AND team_id = $2`,
+			[gameId, game.home_team]
+		);
+		const homeStats = homeStatsRes.rows[0];
+
+		// Collect away team stats
+		const awayStatsRes = await db.query(
+			`SELECT t.id, t.name, tgs.fast_break_points AS "fastBreakPoints", tgs.points_in_paint AS "pointsInPaint", tgs.second_chance_points AS "secondChancePoints", tgs.points_off_turnovers AS "pointsOffTurnovers", tgs.points, tgs.fgm, tgs.fga, tgs.fgp, tgs.ftm, tgs.fta, tgs.ftp, tgs.tpm, tgs.tpa, tgs.tpp, tgs.off_reb AS "offReb", tgs.def_reb AS "defReb", tgs.total_reb AS "totalReb", tgs.assists, tgs.fouls, tgs.steals, tgs.turnovers, tgs.blocks, tgs.plus_minus AS "plusMinus"
+			FROM team_game_stats tgs
+			JOIN teams t ON tgs.team_id = t.id
+			WHERE game_id = $1
+			AND team_id = $2`,
+			[gameId, game.away_team]
+		);
+		const awayStats = awayStatsRes.rows[0];
+
+		let result = { gameId, score: `${homeStats.points} - ${awayStats.points}`, home: {}, away: {} };
+		result.home = homeStats;
+		result.away = awayStats;
+
+		return result;
+	}
+
 	/** Filter games by teamId or date
 	 *
 	 * 	Returns [ { game } ]
