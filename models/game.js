@@ -118,6 +118,128 @@ class Game {
 		return result;
 	}
 
+	/** Returns top performers for each team for a given game
+	 *
+	 * 	Returns { game, home, away }
+	 * 		Where home and away are { points: { id, name, value }, rebounds:
+	 * 				                { id, name, value }, assists: { id, name,
+	 * 								  value }, blocks: { id, name, value }  }
+	 *
+	 *	Throws NotFoundError if not found.
+	 **/
+
+	static async getTopPerformers(gameId) {
+		const game = await this.checkValid(gameId);
+		// Collect top scorer from each team
+		const homeScorerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY points DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayScorerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY points DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
+		// Collect top rebounder from each team
+		const homeRebounderRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY value DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayRebounderRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY value DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
+		// Collect top assister from each team
+		const homeAssisterRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY assists DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayAssisterRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY assists DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
+		// Collect top blocker from each team
+		const homeBlockerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY blocks DESC
+			LIMIT 1`,
+			[game.id, game.home_team]
+		);
+
+		const awayBlockerRes = await db.query(
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value
+			FROM game_stats gs
+			JOIN players p ON gs.player_id = p.id
+			WHERE gs.game_id = $1
+			AND p.team_id = $2
+			ORDER BY blocks DESC
+			LIMIT 1`,
+			[game.id, game.away_team]
+		);
+
+		const topPerformers = {
+			game: game.id,
+			home: {
+				points: homeScorerRes.rows[0],
+				totalReb: homeRebounderRes.rows[0],
+				assists: homeAssisterRes.rows[0],
+				blocks: homeBlockerRes.rows[0],
+			},
+			away: {
+				points: awayScorerRes.rows[0],
+				totalReb: awayRebounderRes.rows[0],
+				assists: awayAssisterRes.rows[0],
+				blocks: awayBlockerRes.rows[0],
+			},
+		};
+		return topPerformers;
+	}
+
 	/** Filter games by teamId or date
 	 *
 	 * 	Returns [ { game } ]

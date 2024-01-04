@@ -176,7 +176,7 @@ async function getTeamStats() {
 	}
 }
 
-async function getGameStats() {
+async function getPlayerGameStats() {
 	try {
 		// Get all players currently in DB
 		const response = await db.query('SELECT id FROM players ORDER BY last_name');
@@ -224,7 +224,7 @@ async function getGameStats() {
 				}
 			}
 		}
-		console.log('All player stats added!');
+		console.log('All player game stats added!');
 	} catch (err) {
 		console.error(err);
 	}
@@ -372,9 +372,9 @@ async function seed() {
 
 	// await delay(30000);
 
-	// await getGameStats();
+	await getPlayerGameStats();
 
-	// console.log('All game stats added!');
+	console.log('All game stats added!');
 
 	// await populateSeasonStats();
 

@@ -67,6 +67,26 @@ router.get('/:gameId/stats', authenticateJWT, ensureLoggedIn, async function (re
 	}
 })
 
+/** GET /[gameId]/top => { topPerformers } 
+ * 
+ * 	Returns { game, home, away }
+	 * 		Where home and away are { points: { id, name, value }, rebounds:
+	 * 				                { id, name, value }, assists: { id, name,
+	 * 								  value }, blocks: { id, name, value }  }
+ * 
+ *  Authorization required: must be logged in
+ */
+
+router.get('/:gameId/top', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const gameId = req.params.gameId
+		const topPerformers = await Game.getTopPerformers(gameId)
+		return res.json({topPerformers})
+	} catch(err) {
+		return next(err)
+	}
+})
+
 /** GET /filter/date/[date]=> { games }
  *
  *  Can pass in a date string "DD-MM-YYYY", "today", "tomorrow", "yesterday"
