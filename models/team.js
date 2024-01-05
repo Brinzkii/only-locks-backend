@@ -359,12 +359,13 @@ class Team {
 					`SELECT COUNT(id) AS losses FROM team_game_stats WHERE plus_minus < 0 AND team_id = $1`,
 					[team.id]
 				);
+				const games = Number(winsRes.rows[0].wins) + Number(lossesRes.rows[0].losses);
 				db.query(
 					`UPDATE team_stats 
 					SET games = $1, wins = $2, losses = $3, fast_break_points = $4, points_in_paint = $5, second_chance_points = $6, points_off_turnovers = $7, points = $8, fgm = $9, fga = $10, fgp = $11, ftm = $12, fta = $13, ftp = $14, tpm = $15, tpa = $16, tpp = $17, off_reb = $18, def_reb = $19, total_reb = $20, assists = $21, fouls = $22, steals = $23, turnovers = $24, blocks = $25, plus_minus = $26
 					WHERE team_id = $27`,
 					[
-						winsRes.rows[0].wins + lossesRes.rows[0].losses,
+						games,
 						winsRes.rows[0].wins,
 						lossesRes.rows[0].losses,
 						ts.fastBreakPoints,
