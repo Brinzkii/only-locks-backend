@@ -90,7 +90,9 @@ CREATE TABLE team_stats (
     id SERIAL PRIMARY KEY,
     team_id INTEGER
         REFERENCES teams ON DELETE CASCADE,
-    games INTEGER NOT NULL,
+    games INTEGER DEFAULT 0,
+    wins INTEGER DEFAULT 0,
+    losses INTEGER DEFAULT 0,
     fast_break_points INTEGER NOT NULL,
     points_in_paint INTEGER NOT NULL,
     second_chance_points INTEGER NOT NULL,

@@ -127,55 +127,6 @@ async function getGames() {
 	}
 }
 
-async function getTeamStats() {
-	try {
-		const response = await db.query('SELECT id FROM teams');
-		let teams = response.rows;
-		for (let team of teams) {
-			await delay(250);
-			let URL = BASE_URL + `teams/statistics?id=${team.id}&season=2023`;
-			const response = await axios.get(URL, { headers });
-			let teamStats = response.data.response;
-			for (let ts of teamStats) {
-				db.query(
-					'INSERT INTO team_stats (team_id, games, fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
-					[
-						team.id,
-						ts.games,
-						ts.fastBreakPoints,
-						ts.pointsInPaint,
-						ts.secondChancePoints,
-						ts.pointsOffTurnovers,
-						ts.points,
-						ts.fgm,
-						ts.fga,
-						+ts.fgp,
-						ts.ftm,
-						ts.fta,
-						+ts.ftp,
-						ts.tpm,
-						ts.tpa,
-						+ts.tpp,
-						ts.offReb,
-						ts.defReb,
-						ts.offReb + ts.defReb,
-						ts.assists,
-						ts.pFouls,
-						ts.steals,
-						ts.turnovers,
-						ts.blocks,
-						ts.plusMinus,
-					]
-				);
-
-				console.log(`Added stats for ${team.name}`);
-			}
-		}
-	} catch (err) {
-		console.error(err);
-	}
-}
-
 async function getPlayerGameStats() {
 	try {
 		// Get all players currently in DB
@@ -297,6 +248,61 @@ async function getTeamGameStats() {
 	}
 }
 
+async function getTeamStats() {
+	try {
+		const response = await db.query('SELECT id FROM teams');
+		let teams = response.rows;
+		for (let team of teams) {
+			await delay(250);
+			let URL = BASE_URL + `teams/statistics?id=${team.id}&season=2023`;
+			const response = await axios.get(URL, { headers });
+			let teamStats = response.data.response;
+			for (let ts of teamStats) {
+				const winsRes = await db.query(
+					`SELECT COUNT(id) AS wins FROM team_game_stats WHERE plus_minus > 0 AND team_id = $1`,
+					[team.id]
+				);
+				db.query(
+					'INSERT INTO team_stats (team_id, games, wins, losses fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
+					[
+						team.id,
+						ts.games,
+						winsRes.rows[0].wins,
+						ts.games - winsRes.rows[0].wins,
+						ts.fastBreakPoints,
+						ts.pointsInPaint,
+						ts.secondChancePoints,
+						ts.pointsOffTurnovers,
+						ts.points,
+						ts.fgm,
+						ts.fga,
+						+ts.fgp,
+						ts.ftm,
+						ts.fta,
+						+ts.ftp,
+						ts.tpm,
+						ts.tpa,
+						+ts.tpp,
+						ts.offReb,
+						ts.defReb,
+						ts.offReb + ts.defReb,
+						ts.assists,
+						ts.pFouls,
+						ts.steals,
+						ts.turnovers,
+						ts.blocks,
+						ts.plusMinus,
+					]
+				);
+
+				console.log(`Added stats for ${team.name}`);
+			}
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+
 async function populateSeasonStats() {
 	try {
 		// Get all players currently in DB
@@ -366,19 +372,23 @@ async function seed() {
 
 	// await delay(30000);
 
+	await getPlayerGameStats();
+
+	console.log('All game stats added!');
+
+	// await delay(30000);
+
 	// await getTeamStats();
 
 	// console.log('All team stats added!');
 
 	// await delay(30000);
 
-	await getPlayerGameStats();
-
-	console.log('All game stats added!');
-
 	// await populateSeasonStats();
 
 	// console.log('All player season stats populated!');
+
+	// await delay(30000);
 
 	await getTeamGameStats();
 

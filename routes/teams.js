@@ -70,11 +70,11 @@ router.patch('/stats', authenticateJWT, ensureAdmin, async function (req, res, n
  * 
  * 	Returns [ {teamStats}, ... ]
  * 
- * 	Where teamStats is { id, name, games, fastBreakPoints, pointsInPaint, 
- * 						 secondChancePoints, pointsOffTurnovers, points, fgm, 
- * 						 fga,fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, 
- * 						 totalReb, assists, fouls, steals, turnovers, blocks, 
- * 						 plusMinus }
+ * 	Where teamStats is { id, name, games, wins, losses, fastBreakPoints, 
+ * 						 pointsInPaint, secondChancePoints, pointsOffTurnovers, 
+ * 						points, fgm,fga,fgp, ftm, fta, ftp, tpm, tpa, tpp, 
+ * 						offReb, defReb, totalReb, assists, fouls, steals, 
+ * 						turnovers, blocks, plusMinus }
  * 
  * 	Authorization required: must be logged in
  **/
@@ -107,7 +107,7 @@ router.get('/:teamId', authenticateJWT, ensureLoggedIn, async function (req, res
 
 /** GET /[teamId]/stats => { teamStats }
  *
- *  Returns { team, games, fastBreakPoints, pointsInPaint,
+ *  Returns { team, games, wins, losses, fastBreakPoints, pointsInPaint,
  *            secondChancePoints, pointsOffTurnovers, points, fgm, fga,
  *            fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb 
  * 			  assists,fouls, steals, turnovers, blocks, plusMinus }
