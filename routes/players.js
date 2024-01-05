@@ -94,7 +94,8 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  *       tpa, tpp, offReb, defReb, totalReb (season stats only), assists,
  * 		 fouls, steals, turnovers, blocks, plusMinus
  *
- * 	Time can be a date string "DD-MM-YYYY", "season", "today", or "yesterday"
+ * 	Time can be a date string "DD-MM-YYYY", "today", or "yesterday"
+ * 		Default is "season"
  *
  * 	Order may be DESC or ASC (case insensitive)
  *
@@ -108,10 +109,10 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  * 	Authorization required: must be logged in
  **/
 
-router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const { time, stat, order } = req.body;
-		const sortedStats = await Player.sortByStats(time, stat, order);
+		const { teamId, time, stat, order } = req.body;
+		const sortedStats = await Player.sortByStats(teamId, time, stat, order);
 		return res.json({ sortedStats });
 	} catch (err) {
 		return next(err);

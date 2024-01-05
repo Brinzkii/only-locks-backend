@@ -490,6 +490,8 @@ class Player {
 	 *  tpm, tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers,
 	 *  blocks, plusMinus
 	 *
+	 * 	TeamId is optional
+	 *
 	 *  Date may be date string "DD-MM-YYYY", "today", "yesterday", "season"
 	 *
 	 * 	Order may be DESC or ASC (case insensitive)
@@ -503,7 +505,7 @@ class Player {
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
 
-	static async sortByStats(date, method, order = 'DESC') {
+	static async sortByStats(teamId, date = 'season', method, order = 'DESC') {
 		const lowDate = date.toLowerCase();
 		const lowMethod = method.toLowerCase();
 		const lowOrder = order.toLowerCase();
@@ -537,12 +539,24 @@ class Player {
 
 		let playersRes;
 		if (lowDate === 'season') {
-			playersRes = await db.query(
-				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+			if (teamId) {
+				const team = await Team.checkValid(teamId);
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+					FROM season_stats s
+					JOIN players p ON s.player_id = p.id
+					WHERE p.team_id = $1
+					ORDER BY ${lowMethod} ${lowOrder}`,
+					[team.id]
+				);
+			} else {
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`
-			);
+				);
+			}
 		} else if (lowDate === 'today' || lowDate === 'yesterday') {
 			let d;
 			let day;
@@ -581,6 +595,13 @@ class Player {
 		const players = playersRes.rows;
 
 		if (!players) throw new BadRequestError('Error retrieving player stats, please try again!');
+
+		for (let player of players) {
+			const gamesPlayedRes = await db.query(`SELECT COUNT(id) AS gp FROM game_stats WHERE player_id = $1`, [
+				player.id,
+			]);
+			player.gp = +gamesPlayedRes.rows[0].gp;
+		}
 
 		return players;
 	}
