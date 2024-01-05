@@ -505,10 +505,10 @@ class Player {
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
 
-	static async sortByStats(teamId, date = 'season', method, order = 'DESC') {
+	static async sortByStats(teamId, date = 'season', method = 'minutes', order = 'DESC') {
 		const lowDate = date.toLowerCase();
-		const lowMethod = method.toLowerCase();
 		const lowOrder = order.toLowerCase();
+		const lowMethod = method.toLowerCase() === 'gp' ? 'minutes' : method.toLowerCase();
 		const validMethods = [
 			'minutes',
 			'points',

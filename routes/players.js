@@ -86,7 +86,7 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
 	}
 });
 
-/** GET /stats/sort
+/** POST /stats/sort
  *
  *  Must include stat, time and order in body of request
  *
@@ -109,7 +109,7 @@ router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, asy
  * 	Authorization required: must be logged in
  **/
 
-router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.post('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
 		const { teamId, time, stat, order } = req.body;
 		const sortedStats = await Player.sortByStats(teamId, time, stat, order);
