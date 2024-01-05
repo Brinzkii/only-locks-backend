@@ -517,7 +517,7 @@ class Team {
 					console.log(`Added stats for game: ${game.id}`);
 				}
 				await delay(250);
-			}
+			} else console.log(`Game ${game.id} has not started yet`);
 		}
 		console.log('Finished updating team game stats!');
 		return;

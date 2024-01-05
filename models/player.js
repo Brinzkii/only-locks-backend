@@ -83,7 +83,7 @@ class Player {
 
 	/** Given a player_id, return season stats for player
 	 *
-	 *  Returns { id, name, minutes, points, fgm, fga,
+	 *  Returns { id, name, gp, minutes, points, fgm, fga,
 	 * 			  fgp, ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb
 	 * 			  assists, fouls, steals, turnovers, blocks, plusMinus }
 	 *
@@ -99,10 +99,12 @@ class Player {
             WHERE s.player_id = $1`,
 			[id]
 		);
-
 		const seasonStats = playerStatsRes.rows[0];
 
 		if (!seasonStats) throw new NotFoundError(`No season stats for player: ${id}`);
+
+		const gamesPlayedRes = await db.query(`SELECT COUNT(id) AS gp from game_stats WHERE player_id = $1`, [id]);
+		seasonStats.gp = +gamesPlayedRes.rows[0].gp;
 
 		return seasonStats;
 	}

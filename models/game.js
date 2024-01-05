@@ -88,6 +88,7 @@ class Game {
 	 **/
 
 	static async getStats(gameId) {
+		let result = {};
 		const game = await this.checkValid(gameId);
 		// Collect home team stats
 		const homeStatsRes = await db.query(
@@ -98,7 +99,6 @@ class Game {
 			AND team_id = $2`,
 			[gameId, game.home_team]
 		);
-		const homeStats = homeStatsRes.rows[0];
 
 		// Collect away team stats
 		const awayStatsRes = await db.query(
@@ -109,13 +109,16 @@ class Game {
 			AND team_id = $2`,
 			[gameId, game.away_team]
 		);
-		const awayStats = awayStatsRes.rows[0];
+		if (homeStatsRes.rows.length && awayStatsRes.rows.length) {
+			const awayStats = awayStatsRes.rows[0];
+			const homeStats = homeStatsRes.rows[0];
 
-		let result = { gameId, score: `${homeStats.points} - ${awayStats.points}`, home: {}, away: {} };
-		result.home = homeStats;
-		result.away = awayStats;
+			let result = { gameId, score: `${homeStats.points} - ${awayStats.points}`, home: {}, away: {} };
+			result.home = homeStats;
+			result.away = awayStats;
 
-		return result;
+			return result;
+		} else return result;
 	}
 
 	/** Returns top performers for each team for a given game
