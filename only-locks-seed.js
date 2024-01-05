@@ -184,26 +184,15 @@ async function getPlayerGameStats() {
 async function getTeamGameStats() {
 	try {
 		const response = await db.query(
-			`SELECT g.id, t1.id AS "homeId", t2.id AS "awayId" 
-			FROM games g
-			JOIN teams t1 ON g.home_team = t1.id
-			JOIN teams t2 ON g.away_team = t2.id  
+			`SELECT id 
+			FROM games g 
 			ORDER BY date ASC`
 		);
 		let games = response.rows;
 		for (let game of games) {
 			let URL = BASE_URL + `games/statistics?id=${game.id}`;
 			const response = await axios.get(URL, { headers });
-			if (response.data.results === 0) {
-				db.query(
-					'INSERT INTO team_game_stats (team_id, game_id, fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
-					[game.homeId, game.id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-				);
-				db.query(
-					'INSERT INTO team_game_stats (team_id, game_id, fast_break_points, points_in_paint, second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
-					[game.awayId, game.id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-				);
-			} else {
+			if (response.data.results !== 0) {
 				const teamStats = response.data.response;
 				for (let ts of teamStats) {
 					const stats = ts.statistics;
@@ -239,9 +228,10 @@ async function getTeamGameStats() {
 						]
 					);
 				}
+
+				console.log(`Added stats for game: ${game.id}`);
+				await delay(250);
 			}
-			console.log(`Added stats for game: ${game.id}`);
-			await delay(250);
 		}
 	} catch (err) {
 		console.error(err);
