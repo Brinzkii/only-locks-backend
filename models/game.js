@@ -1,7 +1,16 @@
 const db = require('../db');
 const axios = require('axios');
 const { NotFoundError, BadRequestError } = require('../expressError');
+const API_KEY = require('../secrets');
 const Team = require('./team');
+const Moment = require('moment');
+
+const BASE_URL = 'https://v2.nba.api-sports.io/';
+const headers = {
+	'x-rapidapi-key': API_KEY || process.env.API_KEY,
+	'x-rapidapi-host': 'v2.nba.api-sports.io',
+};
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 /** Related functions for games */
 
@@ -27,7 +36,7 @@ class Game {
 	 *
 	 *  Returns { id, date, location, homeId, homeName,
 	 *            homeCode, homeLogo, awayId, awayName,
-	 * 			  awayCode, awayLogo, clock, score }
+	 * 			  awayCode, awayLogo, clock, score, status, winner }
 	 *
 	 *
 	 *  Throws NotFoundError if not found.
@@ -35,7 +44,7 @@ class Game {
 
 	static async get(id) {
 		const gameRes = await db.query(
-			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score
+			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
             FROM games g
 			JOIN teams t1 ON g.home_team = t1.id
 			JOIN teams t2 ON g.away_team = t2.id
@@ -54,14 +63,14 @@ class Game {
 	 *
 	 *  Returns { id, date, location, homeId, homeName,
 	 *            homeCode, homeLogo, awayId, awayName,
-	 * 			  awayCode, awayLogo, clock, score }
+	 * 			  awayCode, awayLogo, clock, score, status, winner }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
 
 	static async getAll() {
 		const gamesRes = await db.query(
-			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score
+			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
             FROM games g
 			JOIN teams t1 ON g.home_team = t1.id
 			JOIN teams t2 ON g.away_team = t2.id`
@@ -124,11 +133,13 @@ class Game {
 	/** Returns top performers for each team for a given game
 	 *
 	 * 	Returns { game, home, away }
-	 * 		Where home and away are { points: { id, name, value }, rebounds:
-	 * 				                { id, name, value }, assists: { id, name,
-	 * 								  value }, blocks: { id, name, value },
-	 * 								  steals: { id, name, value }, plusMinus:
-	 * 								  { id, name, value } }
+	 * 		Where home and away are { points: { id, name, value, fg, ft },
+	 * 								  rebounds:{ id, name, value, defReb,
+	 * 								  offReb }, assists: { id, name, value,
+	 * 								  turnovers, minutes }, blocks: { id, name,
+	 * 								  value, fouls, minutes }, steals: { id,
+	 * 								  name, value, fouls, minutes }, plusMinus:
+	 * 								{ id, name, value, minutes } }
 	 *
 	 *	Throws NotFoundError if not found.
 	 **/
@@ -137,7 +148,7 @@ class Game {
 		const game = await this.checkValid(gameId);
 		// Collect top scorer from each team
 		const homeScorerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value, gs.fgm || '/' || gs.fga AS fg, gs.ftm || '/' || gs.fta AS ft
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -148,7 +159,7 @@ class Game {
 		);
 
 		const awayScorerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.points AS value, gs.fgm || '/' || gs.fga AS fg, gs.ftm || '/' || gs.fta AS ft
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -160,7 +171,7 @@ class Game {
 
 		// Collect top rebounder from each team
 		const homeRebounderRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value, gs.def_reb AS "defReb", gs.off_reb AS "offReb" 
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -171,7 +182,7 @@ class Game {
 		);
 
 		const awayRebounderRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.def_reb + gs.off_reb AS value, gs.def_reb AS "defReb", gs.off_reb AS "offReb"
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -183,7 +194,7 @@ class Game {
 
 		// Collect top assister from each team
 		const homeAssisterRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value, gs.turnovers, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -194,7 +205,7 @@ class Game {
 		);
 
 		const awayAssisterRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.assists AS value, gs.turnovers, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -206,7 +217,7 @@ class Game {
 
 		// Collect top blocker from each team
 		const homeBlockerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value, gs.fouls, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -217,7 +228,7 @@ class Game {
 		);
 
 		const awayBlockerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.blocks AS value, gs.fouls, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -229,7 +240,7 @@ class Game {
 
 		// Collect top stealer from each team
 		const homeStealerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value, gs.fouls, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -240,7 +251,7 @@ class Game {
 		);
 
 		const awayStealerRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.steals AS value, gs.fouls, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -252,7 +263,7 @@ class Game {
 
 		// Collect top plus/minus from each team
 		const homePositiveRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -263,7 +274,7 @@ class Game {
 		);
 
 		const awayPositiveRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.plus_minus AS value, gs.minutes
 			FROM game_stats gs
 			JOIN players p ON gs.player_id = p.id
 			WHERE gs.game_id = $1
@@ -302,7 +313,7 @@ class Game {
 	 *  Where game is { id, date, location, homeId, homeName,
 	 *            		homeCode, homeLogo, awayId, awayName,
 	 * 			  		awayCode, awayLogo, clock,
-	 * 					score }
+	 * 					score, status, winner }
 	 *
 	 *  Throws NotFoundError if not found.
 	 **/
@@ -315,7 +326,7 @@ class Game {
 
 		if (teamId && date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -326,7 +337,7 @@ class Game {
 			);
 		} else if (teamId && !date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -336,7 +347,7 @@ class Game {
 			);
 		} else {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -350,6 +361,103 @@ class Game {
 		if (!games) throw new NotFoundError('No games found with that teamID or date!');
 
 		return games;
+	}
+
+	/** Update all games in database */
+
+	static async updateAll() {
+		const gamesRes = await db.query('SELECT id FROM games');
+		const games = gamesRes.rows;
+		for (let game of games) {
+			let URL = BASE_URL + `games?id=${game.id}`;
+			const response = await axios.get(URL, { headers });
+			const updatedGame = response.data.response[0];
+			// check if score exists and save in string format along with winning team
+			let score = null;
+			let winner = null;
+
+			if (updatedGame.status.short === 1) {
+				score = 'TBD';
+			} else {
+				score = `${updatedGame.scores.home.points} - ${updatedGame.scores.visitors.points}`;
+			}
+
+			if (updatedGame.status.short === 3) {
+				if (updatedGame.scores.home.points > updatedGame.scores.visitors.points) {
+					winner = updatedGame.teams.home.id;
+				} else {
+					winner = updatedGame.teams.visitors.id;
+				}
+			}
+
+			db.query(
+				`UPDATE games 
+					SET status=$1, clock=$2, score=$3, winner=$4, date=$5
+					WHERE id=$6`,
+				[
+					updatedGame.status.long.toLowerCase(),
+					updatedGame.status.clock,
+					score,
+					winner,
+					updatedGame.date.start,
+					game.id,
+				]
+			);
+			console.log(`Game(${game.id}) - ${Moment(updatedGame.date.start).format('LLL')} has been updated!`);
+			await delay(250);
+		}
+		console.log('All games have been updated!');
+		return;
+	}
+
+	/** Update yesterday and today's games */
+
+	static async updateRecent() {
+		let currDay = Moment().format('l').replaceAll('/', '-');
+		let prevDay = Moment(currDay).subtract(1, 'days').format('l').replaceAll('/', '-');
+		const gamesRes = await db.query('SELECT id FROM games WHERE date >= $1 AND date <= $2', [prevDay, currDay]);
+		const games = gamesRes.rows;
+		for (let game of games) {
+			let URL = BASE_URL + `games?id=${game.id}`;
+			const response = await axios.get(URL, { headers });
+			const updatedGame = response.data.response[0];
+
+			// check if score exists and save in string format along with winning team
+			let score = null;
+			let winner = null;
+
+			if (updatedGame.status.short === 1) {
+				score = 'TBD';
+			} else {
+				score = `${updatedGame.scores.home.points} - ${updatedGame.scores.visitors.points}`;
+			}
+
+			if (updatedGame.status.short === 3) {
+				if (updatedGame.scores.home.points > updatedGame.scores.visitors.points) {
+					winner = updatedGame.teams.home.id;
+				} else {
+					winner = updatedGame.teams.visitors.id;
+				}
+			}
+
+			db.query(
+				`UPDATE games 
+					SET status=$1, clock=$2, score=$3, winner=$4, date=$5
+					WHERE id=$6`,
+				[
+					updatedGame.status.long.toLowerCase(),
+					updatedGame.status.clock,
+					score,
+					winner,
+					updatedGame.date.start,
+					game.id,
+				]
+			);
+
+			console.log(`Game(${game.id}) - ${Moment(updatedGame.date.start).format('LLL')} has been updated!`);
+		}
+		console.log('All games have been updated!');
+		return;
 	}
 }
 

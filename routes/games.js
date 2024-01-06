@@ -3,7 +3,7 @@
 /** Routes for teams. */
 
 const express = require('express');
-const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
 const Game = require('../models/game');
 
 const router = express.Router();
@@ -23,6 +23,38 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 	try {
 		const games = await Game.getAll();
 		return res.json({ games });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** PATCH /all => { updateAllGames }
+ *
+ * Updates all games in database
+ *
+ * Authorization required: must be admin
+ **/
+
+router.patch('/all', ensureAdmin, async function (req, res, next) {
+	try {
+		await Game.updateAll();
+		return res.json({ updateAllGames: 'success' });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** PATCH /recent => { updateRecentGames }
+ *
+ *  Updates yesterday and today's games
+ *
+ * Authorization required: must be admin
+ */
+
+router.patch('/recent', ensureAdmin, async function (req, res, next) {
+	try {
+		await Game.updateRecent();
+		return res.json({ updateRecentGames: 'success' });
 	} catch (err) {
 		return next(err);
 	}

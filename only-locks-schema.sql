@@ -39,8 +39,11 @@ CREATE TABLE games (
         REFERENCES teams ON DELETE CASCADE,
     away_team INTEGER
         REFERENCES teams ON DELETE CASCADE,
+    status TEXT NOT NULL,
     clock TEXT,
-    score TEXT
+    score TEXT,
+    winner INTEGER
+        REFERENCES teams ON DELETE CASCADE
 );
 
 CREATE TABLE player_picks (

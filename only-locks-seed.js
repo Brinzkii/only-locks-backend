@@ -90,15 +90,22 @@ async function getPlayers() {
 }
 
 async function getGames() {
+	// Game Status from API: 1 - Not Started, 2 - Live, 3 - Finished
 	try {
 		let URL = BASE_URL + 'games?league=standard&season=2023';
 		const response = await axios.get(URL, { headers });
 		let games = response.data.response;
 		for (let game of games) {
-			// check if score exists and save in string format
+			// check if score exists and save in string format along with winning team
 			let score = null;
+			let winner = null;
 			if (game.scores.home.points && game.scores.visitors.points) {
 				score = `${game.scores.home.points} - ${game.scores.visitors.points}`;
+				if (game.scores.home.points > game.scores.visitors.points && game.status.short === 3) {
+					winner = game.teams.home.id;
+				} else if (game.scores.home.points < game.scores.visitors.points && game.status.short === 3) {
+					winner = game.teams.away.id;
+				}
 			}
 
 			// only add regular season games
@@ -106,15 +113,17 @@ async function getGames() {
 			let date = moment(game.date.start);
 			if (date >= seasonStart) {
 				db.query(
-					'INSERT INTO games (id, date, location, home_team, away_team, clock, score) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+					'INSERT INTO games (id, date, location, home_team, away_team, status, clock, score, winner) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
 					[
 						game.id,
-						date.format('LLL'),
+						game.date.start,
 						game.arena.name + ` (${game.arena.city})`,
 						game.teams.home.id,
 						game.teams.visitors.id,
+						game.status.long.toLowerCase(),
 						game.status.clock,
 						score,
+						winner,
 					]
 				);
 
