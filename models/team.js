@@ -201,7 +201,8 @@ class Team {
 			`SELECT id, date, location, home_team AS home, away_team AS away, clock, score
             FROM games
             WHERE home_team = $1
-            OR away_team = $2`,
+            OR away_team = $2
+			ORDER BY date ASC`,
 			[id, id]
 		);
 

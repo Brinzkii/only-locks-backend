@@ -332,7 +332,8 @@ class Game {
 				JOIN teams t2 ON g.away_team = t2.id
 				WHERE g.home_team = $1
 				OR g.away_team = $1
-				AND g.date = $2`,
+				AND g.date = $2
+				ORDER BY g.date ASC`,
 				[teamId, date]
 			);
 		} else if (teamId && !date) {
@@ -342,7 +343,8 @@ class Game {
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
 				WHERE g.home_team = $1
-				OR g.away_team = $1`,
+				OR g.away_team = $1
+				ORDER BY g.date ASC`,
 				[teamId]
 			);
 		} else {
@@ -351,7 +353,8 @@ class Game {
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
-				WHERE g.date = $1`,
+				WHERE g.date = $1
+				ORDER BY g.date ASC`,
 				[date]
 			);
 		}
