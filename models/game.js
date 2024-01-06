@@ -353,7 +353,7 @@ class Game {
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
-				WHERE g.date = $1
+				WHERE DATE(g.date) = $1
 				ORDER BY g.date ASC`,
 				[date]
 			);

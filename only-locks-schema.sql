@@ -33,7 +33,7 @@ CREATE TABLE players (
 
 CREATE TABLE games (
     id INTEGER PRIMARY KEY,
-    date DATE NOT NULL,
+    date TIMESTAMPTZ NOT NULL,
     location TEXT NOT NULL,
     home_team INTEGER
         REFERENCES teams ON DELETE CASCADE,
