@@ -85,7 +85,7 @@ class Game {
 
 	/** Returns team stats for a given game
 	 *
-	 * 	Returns { gameId, score, home, away }
+	 * 	Returns { gameId, winner, score, home, away }
 	 *
 	 * 		Where home and away are { id, name, fast_break_points,
 	 * 		points_in_paint, second_chance_points, points_off_turnovers,
@@ -98,7 +98,7 @@ class Game {
 
 	static async getStats(gameId) {
 		let result = {};
-		const game = await this.checkValid(gameId);
+		const game = await this.get(gameId);
 		// Collect home team stats
 		const homeStatsRes = await db.query(
 			`SELECT t.id, t.name, tgs.fast_break_points AS "fastBreakPoints", tgs.points_in_paint AS "pointsInPaint", tgs.second_chance_points AS "secondChancePoints", tgs.points_off_turnovers AS "pointsOffTurnovers", tgs.points, tgs.fgm, tgs.fga, tgs.fgp, tgs.ftm, tgs.fta, tgs.ftp, tgs.tpm, tgs.tpa, tgs.tpp, tgs.off_reb AS "offReb", tgs.def_reb AS "defReb", tgs.total_reb AS "totalReb", tgs.assists, tgs.fouls, tgs.steals, tgs.turnovers, tgs.blocks, tgs.plus_minus AS "plusMinus"
@@ -106,7 +106,7 @@ class Game {
 			JOIN teams t ON tgs.team_id = t.id
 			WHERE game_id = $1
 			AND team_id = $2`,
-			[gameId, game.home_team]
+			[gameId, game.homeId]
 		);
 
 		// Collect away team stats
@@ -116,13 +116,13 @@ class Game {
 			JOIN teams t ON tgs.team_id = t.id
 			WHERE game_id = $1
 			AND team_id = $2`,
-			[gameId, game.away_team]
+			[gameId, game.awayId]
 		);
 		if (homeStatsRes.rows.length && awayStatsRes.rows.length) {
 			const awayStats = awayStatsRes.rows[0];
 			const homeStats = homeStatsRes.rows[0];
 
-			let result = { gameId, score: `${homeStats.points} - ${awayStats.points}`, home: {}, away: {} };
+			let result = { gameId, winner: game.winner, score: game.score, home: {}, away: {} };
 			result.home = homeStats;
 			result.away = awayStats;
 
@@ -458,6 +458,127 @@ class Game {
 		}
 		console.log('All games have been updated!');
 		return;
+	}
+
+	/** Get head to head results for two teams
+	 *
+	 * 	Gets total team stats for both teams from head to head matchups
+	 *
+	 *  Returns { totals, games, gameStats }
+	 *
+	 *  Throws NotFoundError if teams not found.
+	 *	Throws BadRequestError if same team passed in twice
+	 */
+
+	static async h2h(team1, team2) {
+		if (team1 === team2) throw new BadRequestError('H2H only works for two different teams!');
+
+		const t1 = await Team.checkValid(team1);
+		const t2 = await Team.checkValid(team2);
+
+		const gamesRes = await db.query(
+			`
+		SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+		FROM games g
+		JOIN teams t1 ON g.home_team = t1.id
+		JOIN teams t2 ON g.away_team = t2.id
+		WHERE (g.home_team=$1 OR g.away_team=$1)
+		AND (g.home_team=$2 OR g.away_team=$2)`,
+			[t1.id, t2.id]
+		);
+		const games = gamesRes.rows;
+		const t1code = t1.code;
+		const t2code = t2.code;
+
+		if (!games) throw new NotFoundError(`No head to head matchups found for ${t1.name} and ${t2.name}`);
+		let response = {
+			totals: {
+				[t1code]: {
+					points: 0,
+					assists: 0,
+					totalReb: 0,
+					defReb: 0,
+					offReb: 0,
+					steals: 0,
+					blocks: 0,
+					fgm: 0,
+					fga: 0,
+					fgp: 0,
+					tpm: 0,
+					tpa: 0,
+					tpp: 0,
+					ftm: 0,
+					fta: 0,
+					ftp: 0,
+					fouls: 0,
+					wins: 0,
+					losses: 0,
+				},
+				[t2code]: {
+					points: 0,
+					assists: 0,
+					totalReb: 0,
+					defReb: 0,
+					offReb: 0,
+					steals: 0,
+					blocks: 0,
+					fgm: 0,
+					fga: 0,
+					fgp: 0,
+					tpm: 0,
+					tpa: 0,
+					tpp: 0,
+					ftm: 0,
+					fta: 0,
+					ftp: 0,
+					fouls: 0,
+					wins: 0,
+					losses: 0,
+				},
+			},
+			games,
+			gameStats: [],
+		};
+
+		for (let game of games) {
+			let stats = await this.getStats(game.id);
+			console.log('Stats:', stats);
+			if (Object.keys(stats).length > 0) {
+				response.gameStats.push(stats);
+				if (stats.home.id === team1) {
+					for (let key of Object.keys(response.totals[t1code])) {
+						if (key === 'wins') {
+							if (stats.winner === team1) {
+								response.totals[t1code].wins += 1;
+								response.totals[t2code].losses += 1;
+							} else {
+								response.totals[t1code].losses += 1;
+								response.totals[t2code].wins += 1;
+							}
+							break;
+						}
+						response.totals[t1code][key] += stats.home[key];
+						response.totals[t2code][key] += stats.away[key];
+					}
+				} else {
+					for (let key of Object.keys(response.totals[t1code])) {
+						if (key === 'wins') {
+							if (stats.winner === team1) {
+								response.totals[t1code].wins += 1;
+								response.totals[t2code].losses += 1;
+							} else {
+								response.totals[t1code].losses += 1;
+								response.totals[t2code].wins += 1;
+							}
+							break;
+						}
+						response.totals[t1code][key] += stats.away[key];
+						response.totals[t2code][key] += stats.home[key];
+					}
+				}
+			}
+		}
+		return response;
 	}
 }
 

@@ -185,4 +185,15 @@ router.get('/filter/team/:teamId', authenticateJWT, ensureLoggedIn, async functi
 	}
 });
 
+
+
+router.get('/h2h/:team1id/:team2id', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const h2h = await Game.h2h(req.params.team1id, req.params.team2id);
+		return res.json({ h2h });
+	} catch (err) {
+		return next(err);
+	}
+});
+
 module.exports = router;

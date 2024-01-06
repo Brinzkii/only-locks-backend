@@ -17,7 +17,7 @@ class Team {
 
 	static async checkValid(teamId) {
 		const teamRes = await db.query(
-			`SELECT id
+			`SELECT id, code
             FROM teams
             WHERE id = $1`,
 			[teamId]
