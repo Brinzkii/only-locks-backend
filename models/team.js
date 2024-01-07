@@ -2,6 +2,7 @@ const db = require('../db');
 const axios = require('axios');
 const { NotFoundError, BadRequestError } = require('../expressError');
 const API_KEY = require('../secrets');
+const moment = require('moment');
 
 const BASE_URL = 'https://v2.nba.api-sports.io/';
 const headers = {
@@ -425,8 +426,8 @@ class Team {
 			response = await db.query(
 				`SELECT id 
 				FROM games g 
-				WHERE date >= $1
-				AND date <= $2 
+				WHERE DATE(date) >= $1
+				AND DATE(date) <= $2 
 				ORDER BY date ASC`,
 				[lowDate, highDate]
 			);

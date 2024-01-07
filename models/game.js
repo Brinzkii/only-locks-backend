@@ -418,7 +418,10 @@ class Game {
 	static async updateRecent() {
 		let currDay = Moment().format('l').replaceAll('/', '-');
 		let prevDay = Moment(currDay).subtract(1, 'days').format('l').replaceAll('/', '-');
-		const gamesRes = await db.query('SELECT id FROM games WHERE date >= $1 AND date <= $2', [prevDay, currDay]);
+		const gamesRes = await db.query('SELECT id FROM games WHERE DATE(date) >= $1 AND DATE(date) <= $2', [
+			prevDay,
+			currDay,
+		]);
 		const games = gamesRes.rows;
 		for (let game of games) {
 			let URL = BASE_URL + `games?id=${game.id}`;
@@ -490,13 +493,11 @@ class Game {
 			[t1.id, t2.id]
 		);
 		const games = gamesRes.rows;
-		const t1code = t1.code;
-		const t2code = t2.code;
 
 		if (!games) throw new NotFoundError(`No head to head matchups found for ${t1.name} and ${t2.name}`);
 		let response = {
 			totals: {
-				[t1code]: {
+				[t1.code]: {
 					points: 0,
 					fgm: 0,
 					fga: 0,
@@ -519,7 +520,7 @@ class Game {
 					wins: 0,
 					losses: 0,
 				},
-				[t2code]: {
+				[t2.code]: {
 					points: 0,
 					fgm: 0,
 					fga: 0,
@@ -547,42 +548,45 @@ class Game {
 			gameStats: [],
 		};
 
+		console.log(`${t1.code} WINS:`, response.totals[t1.code].wins);
+		console.log(`${t2.code} WINS:`, response.totals[t2.code].wins);
+
 		for (let game of games) {
 			let stats = await this.getStats(game.id);
 			console.log('Stats:', stats);
 			if (Object.keys(stats).length > 0) {
 				response.gameStats.push(stats);
-				if (stats.home.id === team1) {
-					for (let key of Object.keys(response.totals[t1code])) {
-						if (key === 'wins') {
-							if (stats.winner === team1) {
-								response.totals[t1code].wins += 1;
-								response.totals[t2code].losses += 1;
-							} else {
-								response.totals[t1code].losses += 1;
-								response.totals[t2code].wins += 1;
-							}
-							break;
+				if (stats.home.id === t1.id) {
+					for (let key of Object.keys(response.totals[t1.code])) {
+						if (key !== 'wins' && key !== 'losses') {
+							response.totals[t1.code][key] += stats.home[key];
+							response.totals[t2.code][key] += stats.away[key];
 						}
-						response.totals[t1code][key] += stats.home[key];
-						response.totals[t2code][key] += stats.away[key];
 					}
-				} else {
-					for (let key of Object.keys(response.totals[t1code])) {
-						if (key === 'wins') {
-							if (stats.winner === team1) {
-								response.totals[t1code].wins += 1;
-								response.totals[t2code].losses += 1;
-							} else {
-								response.totals[t1code].losses += 1;
-								response.totals[t2code].wins += 1;
-							}
-							break;
+				} else if (stats.home.id == t2.id) {
+					for (let key of Object.keys(response.totals[t1.code])) {
+						if (key !== 'wins' && key !== 'losses') {
+							response.totals[t1.code][key] += stats.away[key];
+							response.totals[t2.code][key] += stats.home[key];
 						}
-						response.totals[t1code][key] += stats.away[key];
-						response.totals[t2code][key] += stats.home[key];
 					}
 				}
+
+				let t1wins = 0,
+					t2wins = 0,
+					t1losses = 0,
+					t2losses = 0;
+				if (stats.winner === t1.id) {
+					t1wins++;
+					t2losses++;
+				} else if (stats.winner === t2.id) {
+					t1losses++;
+					t2wins++;
+				}
+				response.totals[t1.code].wins = t1wins;
+				response.totals[t1.code].losses = t1losses;
+				response.totals[t2.code].wins = t2wins;
+				response.totals[t2.code].losses = t2losses;
 			}
 		}
 		return response;
