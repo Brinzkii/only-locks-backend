@@ -199,7 +199,7 @@ class Team {
 
 	static async games(id) {
 		const gamesRes = await db.query(
-			`SELECT id, date, location, home_team AS home, away_team AS away, clock, score
+			`SELECT id, date, location, home_team AS home, away_team AS away, clock, score, status, winner
             FROM games
             WHERE home_team = $1
             OR away_team = $2

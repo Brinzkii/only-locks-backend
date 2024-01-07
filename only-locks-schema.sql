@@ -125,6 +125,7 @@ CREATE TABLE season_stats (
     id SERIAL PRIMARY KEY,
     player_id INTEGER 
         REFERENCES players ON DELETE CASCADE,
+    gp INTEGER DEFAULT 0,
     minutes INTEGER NOT NULL,
     points INTEGER NOT NULL,
     fgm INTEGER NOT NULL,

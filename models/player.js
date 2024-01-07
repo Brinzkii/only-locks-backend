@@ -93,7 +93,7 @@ class Player {
 	static async seasonStats(id) {
 		await this.checkValid(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
             WHERE s.player_id = $1`,
@@ -117,7 +117,7 @@ class Player {
 		for (let player of players) {
 			// Find all instances of game stats and sum up before adding to season_stats
 			const response = await db.query(
-				`SELECT SUM(minutes) AS minutes, SUM(points) AS points, SUM(fgm) AS fgm, SUM(fga) AS fga, AVG(NULLIF(fgp, 0)) AS fgp, SUM(ftm) AS ftm, SUM(fta) AS fta, AVG(NULLIF(ftp, 0)) AS ftp, SUM(tpm) AS tpm, SUM(tpa) AS tpa, AVG(NULLIF(tpp, 0)) AS tpp, SUM(off_reb) AS offReb, SUM(def_reb) AS defReb, SUM(off_reb + def_reb) AS totalReb, SUM(assists) AS assists, SUM(fouls) AS fouls, SUM(steals) AS steals, SUM(turnovers) AS turnovers, SUM(blocks) AS blocks, SUM(plus_minus) AS "plusMinus"
+				`SELECT COUNT(*) AS gp, SUM(minutes) AS minutes, SUM(points) AS points, SUM(fgm) AS fgm, SUM(fga) AS fga, AVG(NULLIF(fgp, 0)) AS fgp, SUM(ftm) AS ftm, SUM(fta) AS fta, AVG(NULLIF(ftp, 0)) AS ftp, SUM(tpm) AS tpm, SUM(tpa) AS tpa, AVG(NULLIF(tpp, 0)) AS tpp, SUM(off_reb) AS offReb, SUM(def_reb) AS defReb, SUM(off_reb + def_reb) AS totalReb, SUM(assists) AS assists, SUM(fouls) AS fouls, SUM(steals) AS steals, SUM(turnovers) AS turnovers, SUM(blocks) AS blocks, SUM(plus_minus) AS "plusMinus"
 				FROM game_stats
 				WHERE player_id = $1`,
 				[player.id]
@@ -126,8 +126,8 @@ class Player {
 
 			await db.query(
 				`UPDATE season_stats
-				SET minutes = $1, points = $2, fgm = $3, fga = $4, fgp = $5, ftm = $6, fta = $7, ftp = $8, tpm = $9, tpa = $10, tpp = $11, off_reb = $12, def_reb = $13, total_reb = $14, assists = $15, fouls = $16, steals = $17, turnovers = $18, blocks = $19, plus_minus = $20
-				WHERE player_id = $21`,
+				SET minutes = $1, points = $2, fgm = $3, fga = $4, fgp = $5, ftm = $6, fta = $7, ftp = $8, tpm = $9, tpa = $10, tpp = $11, off_reb = $12, def_reb = $13, total_reb = $14, assists = $15, fouls = $16, steals = $17, turnovers = $18, blocks = $19, plus_minus = $20, gp = $21
+				WHERE player_id = $22`,
 				[
 					stats.minutes || 0,
 					stats.points || 0,
@@ -149,6 +149,7 @@ class Player {
 					stats.turnovers || 0,
 					stats.blocks || 0,
 					stats.plusminus || 0,
+					stats.gp,
 					player.id,
 				]
 			);
@@ -496,7 +497,7 @@ class Player {
 	 *
 	 * 	Order may be DESC or ASC (case insensitive)
 	 *
-	 * 	Returns [ {seasonStats}, ... ]
+	 * 	Returns [ {totals, perGame, per36}, ... ]
 	 *
 	 * 	Where seasonStats is { id, name, points, fgm, fga, fgp, ftm, fta,
 	 * 						   ftp, tpm, tpa, tpp, offReb, defReb, assists,
@@ -508,8 +509,9 @@ class Player {
 	static async sortByStats(teamId, date = 'season', method = 'minutes', order = 'DESC') {
 		const lowDate = date.toLowerCase();
 		const lowOrder = order.toLowerCase();
-		const lowMethod = method.toLowerCase() === 'gp' ? 'minutes' : method.toLowerCase();
+		const lowMethod = method.toLowerCase();
 		const validMethods = [
+			'gp',
 			'minutes',
 			'points',
 			'fgm',
@@ -542,7 +544,7 @@ class Player {
 			if (teamId) {
 				const team = await Team.checkValid(teamId);
 				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 					FROM season_stats s
 					JOIN players p ON s.player_id = p.id
 					WHERE p.team_id = $1
@@ -551,7 +553,7 @@ class Player {
 				);
 			} else {
 				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
 				ORDER BY ${lowMethod} ${lowOrder}`
@@ -596,14 +598,66 @@ class Player {
 
 		if (!players) throw new BadRequestError('Error retrieving player stats, please try again!');
 
-		for (let player of players) {
-			const gamesPlayedRes = await db.query(`SELECT COUNT(id) AS gp FROM game_stats WHERE player_id = $1`, [
-				player.id,
-			]);
-			player.gp = +gamesPlayedRes.rows[0].gp;
-		}
+		let results = { totals: [], perGame: [], per36: [] };
 
-		return players;
+		for (let p of players) {
+			const perGame = {
+				name: p.name,
+				assists: p.assists / p.gp || 0,
+				blocks: p.blocks / p.gp || 0,
+				defReb: p.defReb / p.gp || 0,
+				fga: p.fga / p.gp || 0,
+				fgm: p.fgm / p.gp || 0,
+				fgp: p.fgp / p.gp || 0,
+				fouls: p.fouls / p.gp || 0,
+				fta: p.fta / p.gp || 0,
+				ftm: p.ftm / p.gp || 0,
+				ftp: p.ftp / p.gp || 0,
+				gp: p.gp || 0,
+				id: p.id || 0,
+				minutes: p.minutes / p.gp || 0,
+				offReb: p.offReb / p.gp || 0,
+				plusMinus: p.plusMinus / p.gp || 0,
+				points: p.points / p.gp || 0,
+				steals: p.steals / p.gp || 0,
+				totalReb: p.totalReb / p.gp || 0,
+				tpa: p.tpa / p.gp || 0,
+				tpm: p.tpm / p.gp || 0,
+				tpp: p.tpp / p.gp || 0,
+				turnovers: p.turnovers / p.gp || 0,
+			};
+
+			const per36 = {
+				name: p.name,
+				assists: (p.assists / p.minutes) * 36 || 0,
+				blocks: (p.blocks / p.minutes) * 36 || 0,
+				defReb: (p.defReb / p.minutes) * 36 || 0,
+				fga: (p.fga / p.minutes) * 36 || 0,
+				fgm: (p.fgm / p.minutes) * 36 || 0,
+				fgp: (p.fgp / p.minutes) * 36 || 0,
+				fouls: (p.fouls / p.minutes) * 36 || 0,
+				fta: (p.fta / p.minutes) * 36 || 0,
+				ftm: (p.ftm / p.minutes) * 36 || 0,
+				ftp: (p.ftp / p.minutes) * 36 || 0,
+				gp: p.gp,
+				id: p.id,
+				minutes: (p.minutes / p.minutes) * 36 || 0,
+				offReb: (p.offReb / p.minutes) * 36 || 0,
+				plusMinus: (p.plusMinus / p.minutes) * 36 || 0,
+				points: (p.points / p.minutes) * 36 || 0,
+				steals: (p.steals / p.minutes) * 36 || 0,
+				totalReb: (p.totalReb / p.minutes) * 36 || 0,
+				tpa: (p.tpa / p.minutes) * 36 || 0,
+				tpm: Math.round((p.tpm / p.minutes) * 36) || 0,
+				tpp: (p.tpp / p.minutes) * 36 || 0,
+				turnovers: (p.turnovers / p.minutes) * 36 || 0,
+			};
+
+			results.perGame.push(perGame);
+			results.per36.push(per36);
+		}
+		results.totals = players;
+		return results;
 	}
 }
 
