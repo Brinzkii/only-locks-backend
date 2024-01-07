@@ -578,7 +578,7 @@ class Player {
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
-				WHERE ga.date = $1
+				WHERE DATE(ga.date) = $1
 				ORDER BY ${lowMethod} ${lowOrder}`,
 				[day]
 			);
@@ -588,7 +588,7 @@ class Player {
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
-				WHERE ga.date = $1
+				WHERE DATE(ga.date) = $1
 				ORDER BY ${lowMethod} ${lowOrder}`,
 				[lowDate]
 			);
