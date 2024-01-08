@@ -98,15 +98,15 @@ router.patch('/stats/games', authenticateJWT, ensureAdmin, async function (req, 
  * 	Authorization required: must be logged in
  **/
 
-router.get('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.post('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const {stat, order} = req.body
-		const teamStats = await Team.sortByStats(stat, order)
-		return res.json({teamStats})
+		const { stat, order } = req.body;
+		const teamStats = await Team.sortByStats(stat, order);
+		return res.json({ teamStats });
 	} catch (err) {
-		return next(err)
+		return next(err);
 	}
-})
+});
 
 /** GET /[teamId] => { team }
  *
