@@ -63,7 +63,9 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 	}
 });
 
-/** GET /[playerId]/stats/game/[gameId] => { gameStats }
+/** GET /[playerId]/stats/game => { gameStats }
+ * 
+ * 	Can pass in gameId via request body for a specific game's stats
  *
  *	Returns { id, name, game, minutes, points, fgm, fga, fgp,
  * 			  ftm, fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls,
@@ -77,8 +79,9 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
  *  Authorization required: must be logged in
  **/
 
-router.get('/:playerId/stats/game/:gameId', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+router.post('/:playerId/stats/game', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
+		const { gameId } = req.body;
 		const gameStats = await Player.gameStats(req.params.playerId, req.params.gameId);
 		return res.json({ gameStats });
 	} catch (err) {
