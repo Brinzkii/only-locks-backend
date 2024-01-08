@@ -165,6 +165,7 @@ CREATE TABLE game_stats (
     tpm INTEGER NOT NULL,
     tpa INTEGER NOT NULL,
     tpp REAL NOT NULL,
+    total_reb INTEGER NOT NULL,
     off_reb INTEGER NOT NULL,
     def_reb INTEGER NOT NULL,
     assists INTEGER NOT NULL,
