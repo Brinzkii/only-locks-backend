@@ -55,7 +55,7 @@ class Player {
 
 		if (!player) throw new NotFoundError(`No player: ${id}`);
 
-		const team = await Team.get(player.team_id);
+		const team = await Team.get(player.teamId);
 		player.team = team;
 
 		return player;
