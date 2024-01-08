@@ -589,10 +589,10 @@ class Player {
 					);
 				}
 			}
-		} else if (moment(lowDate) > moment() || lowDate === 'today' || lowDate === 'yesterday') {
+		} else if (moment(lowDate) >= moment().subtract(1, 'days') || lowDate === 'today' || lowDate === 'yesterday') {
 			let d = moment();
 			let day;
-			if (lowDate === 'today' || moment(lowDate) > moment()) {
+			if (lowDate === 'today' || moment(lowDate) >= moment().subtract(1, 'days')) {
 				day = lowDate === 'today' ? d.format('l').replaceAll('/', '-') : lowDate;
 				const stats = await db.query(
 					`SELECT gs.id 
