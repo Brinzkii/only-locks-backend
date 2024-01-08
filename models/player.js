@@ -233,9 +233,9 @@ class Player {
 			if (statsExist.rows.length && ps) {
 				db.query(
 					`UPDATE game_stats
-					SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
-					WHERE player_id = $20
-					AND game_id = $21`,
+					SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19, total_reb = $20
+					WHERE player_id = $21
+					AND game_id = $22`,
 					[
 						+ps.min || 0,
 						ps.points || 0,
@@ -256,6 +256,7 @@ class Player {
 						ps.turnovers || 0,
 						ps.blocks || 0,
 						+ps.plusMinus || 0,
+						ps.offReb + ps.defReb || 0,
 						player.id,
 						game.id,
 					]
@@ -263,7 +264,7 @@ class Player {
 				console.log(`Updated stats for ${player.name} from Game: ${ps.game.id}`);
 			} else if (ps) {
 				db.query(
-					'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+					'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, total_reb, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $22)',
 					[
 						player.id,
 						game.id,
@@ -278,6 +279,7 @@ class Player {
 						ps.tpm || 0,
 						ps.tpa || 0,
 						+ps.tpp || 0,
+						ps.defReb + ps.offReb || 0,
 						ps.offReb || 0,
 						ps.defReb || 0,
 						ps.assists || 0,
@@ -329,9 +331,9 @@ class Player {
 						if (statsExist.rows.length) {
 							db.query(
 								`UPDATE game_stats
-								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
-								WHERE player_id = $20
-								AND game_id = $21`,
+								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19, total_reb=$20
+								WHERE player_id = $21
+								AND game_id = $22`,
 								[
 									+ps.min || 0,
 									ps.points || 0,
@@ -352,6 +354,7 @@ class Player {
 									ps.turnovers || 0,
 									ps.blocks || 0,
 									+ps.plusMinus || 0,
+									ps.defReb + ps.offReb || 0,
 									player.id,
 									ps.game.id,
 								]
@@ -361,7 +364,7 @@ class Player {
 							);
 						} else {
 							db.query(
-								'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+								'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, total_reb, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
 								[
 									ps.player.id,
 									ps.game.id,
@@ -376,6 +379,7 @@ class Player {
 									ps.tpm || 0,
 									ps.tpa || 0,
 									+ps.tpp || 0,
+									ps.offReb + ps.defReb || 0,
 									ps.offReb || 0,
 									ps.defReb || 0,
 									ps.assists || 0,
@@ -428,9 +432,9 @@ class Player {
 					if (statsExist.rows.length && ps) {
 						db.query(
 							`UPDATE game_stats
-								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19
-								WHERE player_id = $20
-								AND game_id = $21`,
+								SET minutes=$1, points=$2, fgm=$3, fga=$4, fgp=$5, ftm=$6, fta=$7, ftp=$8, tpm=$9, tpa=$10, tpp=$11, off_reb=$12, def_reb=$13, assists=$14, fouls=$15, steals=$16, turnovers=$17, blocks=$18, plus_minus=$19, total_reb=$20
+								WHERE player_id = $21
+								AND game_id = $22`,
 							[
 								+ps.min || 0,
 								ps.points || 0,
@@ -451,6 +455,7 @@ class Player {
 								ps.turnovers || 0,
 								ps.blocks || 0,
 								+ps.plusMinus || 0,
+								ps.defReb + ps.offReb || 0,
 								player.id,
 								game.id,
 							]
@@ -460,7 +465,7 @@ class Player {
 						);
 					} else if (ps) {
 						db.query(
-							'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+							'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, total_reb, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
 							[
 								player.id,
 								game.id,
@@ -475,6 +480,7 @@ class Player {
 								ps.tpm || 0,
 								ps.tpa || 0,
 								+ps.tpp || 0,
+								ps.defReb + ps.offReb || 0,
 								ps.offReb || 0,
 								ps.defReb || 0,
 								ps.assists || 0,
@@ -550,6 +556,8 @@ class Player {
 
 		if (lowOrder != 'asc' && lowOrder != 'desc') throw new BadRequestError('Order must be DESC or ASC');
 
+		let statsExist = true;
+
 		let playersRes;
 		if (lowDate === 'season') {
 			if (teamId) {
@@ -563,36 +571,113 @@ class Player {
 					[team.id]
 				);
 			} else {
-				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+				if (lowMethod === 'fgp' || lowMethod === 'ftp' || lowMethod === 'tpp') {
+					playersRes = await db.query(
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+					FROM season_stats s
+					JOIN players p ON s.player_id = p.id
+					WHERE ${lowMethod.slice(0, 2) + 'a'} >= 25
+					ORDER BY ${lowMethod} ${lowOrder}`
+					);
+				} else {
+					playersRes = await db.query(
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
+				JOIN games g ON 
 				ORDER BY ${lowMethod} ${lowOrder}`
+					);
+				}
+			}
+		} else if (moment(lowDate) > moment() || lowDate === 'today' || lowDate === 'yesterday') {
+			let d = moment();
+			let day;
+			if (lowDate === 'today' || moment(lowDate) > moment()) {
+				day = lowDate === 'today' ? d.format('l').replaceAll('/', '-') : lowDate;
+				const stats = await db.query(
+					`SELECT gs.id 
+				FROM game_stats gs
+				JOIN games g ON gs.game_id = g.id 
+				WHERE DATE(g.date) = $1`,
+					[day]
+				);
+				if (stats.rows.length) {
+					playersRes = await db.query(
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+						FROM game_stats gs
+						JOIN players p ON gs.player_id = p.id
+						JOIN games ga ON gs.game_id = ga.id
+						WHERE DATE(ga.date) = $1
+						ORDER BY ${lowMethod} ${lowOrder}
+						LIMIT 10`,
+						[day]
+					);
+				} else {
+					statsExist = false;
+					const teamsToPlay = await db.query(
+						`
+					SELECT t1.id AS t1, t2.id AS t2
+					FROM games g
+					JOIN teams t1 ON g.home_team = t1.id
+					JOIN teams t2 ON g.away_team = t2.id
+					WHERE DATE (g.date)=$1`,
+						[day]
+					);
+
+					let teams = [];
+					teamsToPlay.rows.forEach((t) => {
+						teams.push(t.t1);
+						teams.push(t.t2);
+					});
+
+					const relevantPlayers = await db.query(
+						`
+					SELECT p.id
+					FROM players p
+					JOIN teams t ON p.team_id = t.id
+					WHERE t.id = ANY($1)`,
+						[teams]
+					);
+					let players = [];
+					relevantPlayers.rows.forEach((p) => players.push(p.id));
+
+					if (lowMethod === 'fgp' || lowMethod === 'ftp' || lowMethod === 'tpp') {
+						playersRes = await db.query(
+							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+						FROM season_stats s
+						JOIN players p ON s.player_id = p.id
+						WHERE p.id = ANY($1)
+						AND ${lowMethod.slice(0, 2) + 'a'} >= 25
+						ORDER BY ${lowMethod} ${lowOrder}
+						LIMIT 10`,
+							[players]
+						);
+					} else {
+						playersRes = await db.query(
+							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+						FROM season_stats s
+						JOIN players p ON s.player_id = p.id
+						WHERE p.id = ANY($1)
+						ORDER BY ${lowMethod} ${lowOrder}
+						LIMIT 10`,
+							[players]
+						);
+					}
+				}
+			} else {
+				let yesterday = d.subtract(1, 'days');
+				day = yesterday.format('l').replaceAll('/', '-');
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					FROM game_stats gs
+					JOIN players p ON gs.player_id = p.id
+					JOIN games ga ON gs.game_id = ga.id
+					WHERE DATE(ga.date) = $1
+					ORDER BY ${lowMethod} ${lowOrder}
+					LIMIT 10`,
+					[day]
 				);
 			}
-		} else if (lowDate === 'today' || lowDate === 'yesterday') {
-			let d;
-			let day;
-			let yesterday;
-			if (lowDate === 'today') {
-				d = new Date();
-				day = d.toISOString().slice(0, 10);
-			} else {
-				d = new Date();
-				yesterday = d.getDate() - 1;
-				d.setDate(yesterday);
-				day = d.toISOString().slice(0, 10);
-			}
-
-			playersRes = await db.query(
-				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
-				FROM game_stats gs
-				JOIN players p ON gs.player_id = p.id
-				JOIN games ga ON gs.game_id = ga.id
-				WHERE DATE(ga.date) = $1
-				ORDER BY ${lowMethod} ${lowOrder}`,
-				[day]
-			);
 		} else {
 			playersRes = await db.query(
 				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
@@ -600,7 +685,8 @@ class Player {
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
 				WHERE DATE(ga.date) = $1
-				ORDER BY ${lowMethod} ${lowOrder}`,
+				ORDER BY ${lowMethod} ${lowOrder}
+				LIMIT 10`,
 				[lowDate]
 			);
 		}
@@ -609,65 +695,69 @@ class Player {
 
 		if (!players) throw new BadRequestError('Error retrieving player stats, please try again!');
 
-		let results = { totals: [], perGame: [], per36: [] };
+		let results = players;
 
-		for (let p of players) {
-			const perGame = {
-				name: p.name,
-				assists: p.assists / p.gp || 0,
-				blocks: p.blocks / p.gp || 0,
-				defReb: p.defReb / p.gp || 0,
-				fga: p.fga / p.gp || 0,
-				fgm: p.fgm / p.gp || 0,
-				fgp: p.fgp || 0,
-				fouls: p.fouls / p.gp || 0,
-				fta: p.fta / p.gp || 0,
-				ftm: p.ftm / p.gp || 0,
-				ftp: p.ftp || 0,
-				gp: p.gp || 0,
-				id: p.id || 0,
-				minutes: p.minutes / p.gp || 0,
-				offReb: p.offReb / p.gp || 0,
-				plusMinus: p.plusMinus / p.gp || 0,
-				points: p.points / p.gp || 0,
-				steals: p.steals / p.gp || 0,
-				totalReb: p.totalReb / p.gp || 0,
-				tpa: p.tpa / p.gp || 0,
-				tpm: p.tpm / p.gp || 0,
-				tpp: p.tpp || 0,
-				turnovers: p.turnovers / p.gp || 0,
-			};
+		if (lowDate === 'season' || !statsExist) {
+			results = { totals: [], perGame: [], per36: [] };
+			for (let p of players) {
+				const perGame = {
+					name: p.name,
+					assists: p.assists / p.gp || 0,
+					blocks: p.blocks / p.gp || 0,
+					defReb: p.defReb / p.gp || 0,
+					fga: p.fga / p.gp || 0,
+					fgm: p.fgm / p.gp || 0,
+					fgp: p.fgp || 0,
+					fouls: p.fouls / p.gp || 0,
+					fta: p.fta / p.gp || 0,
+					ftm: p.ftm / p.gp || 0,
+					ftp: p.ftp || 0,
+					gp: p.gp || 0,
+					id: p.id || 0,
+					minutes: p.minutes / p.gp || 0,
+					offReb: p.offReb / p.gp || 0,
+					plusMinus: p.plusMinus / p.gp || 0,
+					points: p.points / p.gp || 0,
+					steals: p.steals / p.gp || 0,
+					totalReb: p.totalReb / p.gp || 0,
+					tpa: p.tpa / p.gp || 0,
+					tpm: p.tpm / p.gp || 0,
+					tpp: p.tpp || 0,
+					turnovers: p.turnovers / p.gp || 0,
+				};
 
-			const per36 = {
-				name: p.name,
-				assists: (p.assists / p.minutes) * 36 || 0,
-				blocks: (p.blocks / p.minutes) * 36 || 0,
-				defReb: (p.defReb / p.minutes) * 36 || 0,
-				fga: (p.fga / p.minutes) * 36 || 0,
-				fgm: (p.fgm / p.minutes) * 36 || 0,
-				fgp: p.fgp || 0,
-				fouls: (p.fouls / p.minutes) * 36 || 0,
-				fta: (p.fta / p.minutes) * 36 || 0,
-				ftm: (p.ftm / p.minutes) * 36 || 0,
-				ftp: p.ftp || 0,
-				gp: p.gp,
-				id: p.id,
-				minutes: (p.minutes / p.minutes) * 36 || 0,
-				offReb: (p.offReb / p.minutes) * 36 || 0,
-				plusMinus: (p.plusMinus / p.minutes) * 36 || 0,
-				points: (p.points / p.minutes) * 36 || 0,
-				steals: (p.steals / p.minutes) * 36 || 0,
-				totalReb: (p.totalReb / p.minutes) * 36 || 0,
-				tpa: (p.tpa / p.minutes) * 36 || 0,
-				tpm: Math.round((p.tpm / p.minutes) * 36) || 0,
-				tpp: p.tpp || 0,
-				turnovers: (p.turnovers / p.minutes) * 36 || 0,
-			};
+				const per36 = {
+					name: p.name,
+					assists: (p.assists / p.minutes) * 36 || 0,
+					blocks: (p.blocks / p.minutes) * 36 || 0,
+					defReb: (p.defReb / p.minutes) * 36 || 0,
+					fga: (p.fga / p.minutes) * 36 || 0,
+					fgm: (p.fgm / p.minutes) * 36 || 0,
+					fgp: p.fgp || 0,
+					fouls: (p.fouls / p.minutes) * 36 || 0,
+					fta: (p.fta / p.minutes) * 36 || 0,
+					ftm: (p.ftm / p.minutes) * 36 || 0,
+					ftp: p.ftp || 0,
+					gp: p.gp,
+					id: p.id,
+					minutes: (p.minutes / p.minutes) * 36 || 0,
+					offReb: (p.offReb / p.minutes) * 36 || 0,
+					plusMinus: (p.plusMinus / p.minutes) * 36 || 0,
+					points: (p.points / p.minutes) * 36 || 0,
+					steals: (p.steals / p.minutes) * 36 || 0,
+					totalReb: (p.totalReb / p.minutes) * 36 || 0,
+					tpa: (p.tpa / p.minutes) * 36 || 0,
+					tpm: Math.round((p.tpm / p.minutes) * 36) || 0,
+					tpp: p.tpp || 0,
+					turnovers: (p.turnovers / p.minutes) * 36 || 0,
+				};
 
-			results.perGame.push(perGame);
-			results.per36.push(per36);
+				results.perGame.push(perGame);
+				results.per36.push(per36);
+			}
+			results.totals = players;
 		}
-		results.totals = players;
+		
 		return results;
 	}
 }
