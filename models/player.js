@@ -178,7 +178,7 @@ class Player {
 		let gamesStatsRes;
 		if (gameId) {
 			gameStatsRes = await db.query(
-				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
+				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, gs.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
 				FROM game_stats g
 				JOIN players p ON g.player_id = p.id
 				WHERE g.player_id = $1
@@ -187,7 +187,7 @@ class Player {
 			);
 		} else {
 			gameStatsRes = await db.query(
-				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
+				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, gs.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
 				FROM game_stats g
 				JOIN players p ON g.player_id = p.id
 				WHERE g.player_id = $1`,
@@ -603,7 +603,7 @@ class Player {
 				);
 				if (stats.rows.length) {
 					playersRes = await db.query(
-						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 						FROM game_stats gs
 						JOIN players p ON gs.player_id = p.id
 						JOIN games ga ON gs.game_id = ga.id
@@ -668,7 +668,7 @@ class Player {
 				let yesterday = d.subtract(1, 'days');
 				day = yesterday.format('l').replaceAll('/', '-');
 				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 					FROM game_stats gs
 					JOIN players p ON gs.player_id = p.id
 					JOIN games ga ON gs.game_id = ga.id
@@ -680,7 +680,7 @@ class Player {
 			}
 		} else {
 			playersRes = await db.query(
-				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
