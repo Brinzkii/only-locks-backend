@@ -253,10 +253,11 @@ class Team {
 	 *
 	 * 	Returns [ {teamStats}, ... ]
 	 *
-	 * 	Where teamStats is { id, name, games, wins, losses, fastBreakPoints,
-	 * 						 pointsInPaint, secondChancePoints,
-	 * 						 pointsOffTurnovers, points, fgm, fga, fgp, ftm,
-	 * 						 fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb,
+	 * 	Where teamStats is { id, name, games, wins, losses,
+	 * 						 fastBreakPoints, pointsInPaint,
+	 * 						 secondChancePoints, pointsOffTurnovers,
+	 * 						 points, fgm, fga, fgp, ftm,fta, ftp, tpm,
+	 * 						 tpa, tpp, offReb, defReb, totalReb,
 	 * 						 assists, fouls, steals, turnovers, blocks,
 	 * 						 plusMinus }
 	 */
@@ -273,28 +274,30 @@ class Team {
 		return teamStats;
 	}
 
-	/** Returns teams sorted by desired stat
+	/** Returns teams sorted by desired stat (defaults to wins
+	 * 	descending)
 	 *
 	 *  Method to sort by includes: fast_break_points, points_in_paint,
-	 * 	second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm,
-	 * 	fta, ftp, tpm, tpa, tpp, offReb, defReb, assists, fouls, steals,
-	 * 	turnovers, blocks, plusMinus
+	 * 	second_chance_points, points_off_turnovers, points, fgm, fga,
+	 *  fgp, ftm,fta, ftp, tpm, tpa, tpp, offReb, defReb, assists,
+	 * 	fouls, steals,turnovers, blocks, plusMinus
 	 *
 	 * 	Order may be DESC or ASC (case insensitive)
 	 *
-	 * 	Returns [ {teamStats}, ... ]
+	 * 	Returns { totals: [ {teamStats}, ... ], perGame: [ {
+	 * 			  teamStats }, ... ] }
 	 *
 	 * 	Where teamStats is { team, games, wins, losses, fastBreakPoints,
 	 * 						 pointsInPaint, secondChancePoints,
-	 * 						 pointsOffTurnovers, points, fgm, fga, fgp, ftm,
-	 * 						 fta, ftp, tpm, tpa, tpp, offReb, defReb, totalReb
-	 * 			             assists,fouls, steals, turnovers, blocks,
-	 * 					     plusMinus }
+	 * 						 pointsOffTurnovers, points, fgm, fga, fgp,
+	 * 						 ftm,fta, ftp, tpm, tpa, tpp, offReb,
+	 * 						 defReb, totalReb, assists,fouls, steals,
+	 * 						 turnovers, blocks, plusMinus }
 	 *
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
 
-	static async sortByStats(method, order) {
+	static async sortByStats(method = 'wins', order = 'desc') {
 		const lowMethod = method.toLowerCase();
 		const lowOrder = order.toLowerCase();
 		const validMethods = [
@@ -339,8 +342,43 @@ class Team {
 		);
 
 		const teamStats = teamsRes.rows;
-
-		return teamStats;
+		let results = { totals: [], perGame: [] };
+		for (let ts of teamStats) {
+			const perGame = {
+				name: ts.name,
+				games: ts.games,
+				wins: ts.wins,
+				losses: ts.losses,
+				fastBreakPoints: ts.fastBreakPoints,
+				pointsInPaint: ts.pointsInPaint,
+				secondChancePoints: ts.secondChancePoints,
+				pointsOffTurnovers: ts.pointsOffTurnovers,
+				assists: ts.assists / ts.games || 0,
+				blocks: ts.blocks / ts.games || 0,
+				defReb: ts.defReb / ts.games || 0,
+				fga: ts.fga / ts.games || 0,
+				fgm: ts.fgm / ts.games || 0,
+				fgp: ts.fgp || 0,
+				fouls: ts.fouls / ts.games || 0,
+				fta: ts.fta / ts.games || 0,
+				ftm: ts.ftm / ts.games || 0,
+				ftp: ts.ftp || 0,
+				id: ts.id || 0,
+				minutes: ts.minutes / ts.games || 0,
+				offReb: ts.offReb / ts.games || 0,
+				plusMinus: ts.plusMinus / ts.games || 0,
+				points: ts.points / ts.games || 0,
+				steals: ts.steals / ts.games || 0,
+				totalReb: ts.totalReb / ts.games || 0,
+				tpa: ts.tpa / ts.games || 0,
+				tpm: ts.tpm / ts.games || 0,
+				tpp: ts.tpp || 0,
+				turnovers: ts.turnovers / ts.games || 0,
+			};
+			results.perGame.push(perGame);
+		}
+		results.totals = teamStats;
+		return results;
 	}
 
 	/** Retrieve team season stats from external API and update DB */
