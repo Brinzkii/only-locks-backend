@@ -175,10 +175,12 @@ class Player {
 	static async gameStats(playerId, gameId = undefined) {
 		if (!playerId) throw new BadRequestError('Must include a player ID to get player game stats!');
 
-		let gamesStatsRes;
-		if (gameId) {
+		let gameStatsRes;
+		let game;
+		console.log(gameId);
+		if (gameId !== undefined) {
 			gameStatsRes = await db.query(
-				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, gs.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
+				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.game_id AS "gameId", g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
 				FROM game_stats g
 				JOIN players p ON g.player_id = p.id
 				WHERE g.player_id = $1
@@ -187,7 +189,7 @@ class Player {
 			);
 		} else {
 			gameStatsRes = await db.query(
-				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, gs.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
+				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.game_id AS "gameId", g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
 				FROM game_stats g
 				JOIN players p ON g.player_id = p.id
 				WHERE g.player_id = $1`,
@@ -195,12 +197,11 @@ class Player {
 			);
 		}
 
-		const gameStats = gameStatsRes.rows[0];
+		const gameStats = !gameId ? gameStatsRes.rows : gameStatsRes.rows[0];
 
 		if (!gameStats) throw new NotFoundError(`No game stats for player: ${playerId} | game: ${gameId}`);
 
-		const game = await Game.get(gameId);
-		gameStats.game = game;
+
 
 		return gameStats;
 	}

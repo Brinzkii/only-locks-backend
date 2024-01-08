@@ -82,7 +82,7 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 router.post('/:playerId/stats/game', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
 		const { gameId } = req.body;
-		const gameStats = await Player.gameStats(req.params.playerId, req.params.gameId);
+		const gameStats = await Player.gameStats(req.params.playerId, gameId);
 		return res.json({ gameStats });
 	} catch (err) {
 		return next(err);
