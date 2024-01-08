@@ -505,8 +505,8 @@ class Player {
 	/** Returns players sorted by desired stat
 	 *
 	 *  Method to sort by includes: points, fgm, fga, fgp, ftm, fta, ftp,
-	 *  tpm, tpa, tpp, offReb, defReb, assists, fouls, steals, turnovers,
-	 *  blocks, plusMinus
+	 *  tpm, tpa, tpp, totalReb, offReb, defReb, assists, fouls, steals,
+	 * 	turnovers, blocks, plusMinus
 	 *
 	 * 	TeamId is optional
 	 *
@@ -563,9 +563,10 @@ class Player {
 			if (teamId) {
 				const team = await Team.checkValid(teamId);
 				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 					FROM season_stats s
 					JOIN players p ON s.player_id = p.id
+					JOIN TEAMS t ON p.team_id = t.id
 					WHERE p.team_id = $1
 					ORDER BY ${lowMethod} ${lowOrder}`,
 					[team.id]
@@ -573,18 +574,19 @@ class Player {
 			} else {
 				if (lowMethod === 'fgp' || lowMethod === 'ftp' || lowMethod === 'tpp') {
 					playersRes = await db.query(
-						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 					FROM season_stats s
 					JOIN players p ON s.player_id = p.id
+					JOIN TEAMS t ON p.team_id = t.id
 					WHERE ${lowMethod.slice(0, 2) + 'a'} >= 25
 					ORDER BY ${lowMethod} ${lowOrder}`
 					);
 				} else {
 					playersRes = await db.query(
-						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 				FROM season_stats s
 				JOIN players p ON s.player_id = p.id
-				JOIN games g ON 
+				JOIN TEAMS t ON p.team_id = t.id
 				ORDER BY ${lowMethod} ${lowOrder}`
 					);
 				}
@@ -603,10 +605,11 @@ class Player {
 				);
 				if (stats.rows.length) {
 					playersRes = await db.query(
-						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 						FROM game_stats gs
 						JOIN players p ON gs.player_id = p.id
 						JOIN games ga ON gs.game_id = ga.id
+						JOIN TEAMS t ON p.team_id = t.id
 						WHERE DATE(ga.date) = $1
 						ORDER BY ${lowMethod} ${lowOrder}
 						LIMIT 10`,
@@ -643,9 +646,10 @@ class Player {
 
 					if (lowMethod === 'fgp' || lowMethod === 'ftp' || lowMethod === 'tpp') {
 						playersRes = await db.query(
-							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 						FROM season_stats s
 						JOIN players p ON s.player_id = p.id
+						JOIN TEAMS t ON p.team_id = t.id
 						WHERE p.id = ANY($1)
 						AND ${lowMethod.slice(0, 2) + 'a'} >= 25
 						ORDER BY ${lowMethod} ${lowOrder}
@@ -654,9 +658,10 @@ class Player {
 						);
 					} else {
 						playersRes = await db.query(
-							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+							`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
 						FROM season_stats s
 						JOIN players p ON s.player_id = p.id
+						JOIN TEAMS t ON p.team_id = t.id
 						WHERE p.id = ANY($1)
 						ORDER BY ${lowMethod} ${lowOrder}
 						LIMIT 10`,
@@ -668,10 +673,11 @@ class Player {
 				let yesterday = d.subtract(1, 'days');
 				day = yesterday.format('l').replaceAll('/', '-');
 				playersRes = await db.query(
-					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 					FROM game_stats gs
 					JOIN players p ON gs.player_id = p.id
 					JOIN games ga ON gs.game_id = ga.id
+					JOIN TEAMS t ON p.team_id = t.id
 					WHERE DATE(ga.date) = $1
 					ORDER BY ${lowMethod} ${lowOrder}
 					LIMIT 10`,
@@ -680,10 +686,11 @@ class Player {
 			}
 		} else {
 			playersRes = await db.query(
-				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+				`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
 				FROM game_stats gs
 				JOIN players p ON gs.player_id = p.id
 				JOIN games ga ON gs.game_id = ga.id
+				JOIN TEAMS t ON p.team_id = t.id
 				WHERE DATE(ga.date) = $1
 				ORDER BY ${lowMethod} ${lowOrder}
 				LIMIT 10`,
@@ -702,6 +709,7 @@ class Player {
 			for (let p of players) {
 				const perGame = {
 					name: p.name,
+					code: p.code,
 					assists: p.assists / p.gp || 0,
 					blocks: p.blocks / p.gp || 0,
 					defReb: p.defReb / p.gp || 0,
@@ -728,6 +736,7 @@ class Player {
 
 				const per36 = {
 					name: p.name,
+					code: p.code,
 					assists: (p.assists / p.minutes) * 36 || 0,
 					blocks: (p.blocks / p.minutes) * 36 || 0,
 					defReb: (p.defReb / p.minutes) * 36 || 0,
@@ -757,7 +766,7 @@ class Player {
 			}
 			results.totals = players;
 		}
-		
+
 		return results;
 	}
 }
