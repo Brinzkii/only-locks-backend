@@ -93,9 +93,10 @@ class Player {
 	static async seasonStats(id) {
 		await this.checkValid(id);
 		const playerStatsRes = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, s.gp, s.minutes, s.points, s.fgm, s.fga, s.fgp, s.ftm, s.fta, s.ftp, s.tpm, s.tpa, s.tpp, s.off_reb AS "offReb", s.def_reb AS "defReb", s.total_reb AS "totalReb", s.assists, s.fouls, s.steals, s.turnovers, s.blocks, s.plus_minus AS "plusMinus"
             FROM season_stats s
 			JOIN players p ON s.player_id = p.id
+			JOIN teams t ON p.team_id = t.id
             WHERE s.player_id = $1`,
 			[id]
 		);
@@ -106,7 +107,62 @@ class Player {
 		const gamesPlayedRes = await db.query(`SELECT COUNT(id) AS gp from game_stats WHERE player_id = $1`, [id]);
 		seasonStats.gp = +gamesPlayedRes.rows[0].gp;
 
-		return seasonStats;
+		const perGame = {
+			name: seasonStats.name,
+			code: seasonStats.code,
+			assists: seasonStats.assists / seasonStats.gp || 0,
+			blocks: seasonStats.blocks / seasonStats.gp || 0,
+			defReb: seasonStats.defReb / seasonStats.gp || 0,
+			fga: seasonStats.fga / seasonStats.gp || 0,
+			fgm: seasonStats.fgm / seasonStats.gp || 0,
+			fgp: seasonStats.fgp || 0,
+			fouls: seasonStats.fouls / seasonStats.gp || 0,
+			fta: seasonStats.fta / seasonStats.gp || 0,
+			ftm: seasonStats.ftm / seasonStats.gp || 0,
+			ftp: seasonStats.ftp || 0,
+			gp: seasonStats.gp || 0,
+			id: seasonStats.id || 0,
+			minutes: seasonStats.minutes / seasonStats.gp || 0,
+			offReb: seasonStats.offReb / seasonStats.gp || 0,
+			plusMinus: seasonStats.plusMinus / seasonStats.gp || 0,
+			points: seasonStats.points / seasonStats.gp || 0,
+			steals: seasonStats.steals / seasonStats.gp || 0,
+			totalReb: seasonStats.totalReb / seasonStats.gp || 0,
+			tpa: seasonStats.tpa / seasonStats.gp || 0,
+			tpm: seasonStats.tpm / seasonStats.gp || 0,
+			tpp: seasonStats.tpp || 0,
+			turnovers: seasonStats.gp || 0,
+		};
+
+		const per36 = {
+			name: seasonStats.name,
+			code: seasonStats.code,
+			assists: (seasonStats.assists / seasonStats.minutes) * 36 || 0,
+			blocks: (seasonStats.blocks / seasonStats.minutes) * 36 || 0,
+			defReb: (seasonStats.defReb / seasonStats.minutes) * 36 || 0,
+			fga: (seasonStats.fga / seasonStats.minutes) * 36 || 0,
+			fgm: (seasonStats.fgm / seasonStats.minutes) * 36 || 0,
+			fgp: seasonStats.fgp || 0,
+			fouls: (seasonStats.fouls / seasonStats.minutes) * 36 || 0,
+			fta: (seasonStats.fta / seasonStats.minutes) * 36 || 0,
+			ftm: (seasonStats.ftm / seasonStats.minutes) * 36 || 0,
+			ftp: seasonStats.ftp || 0,
+			gp: seasonStats.gp,
+			id: seasonStats.id,
+			minutes: (seasonStats.minutes / seasonStats.minutes) * 36 || 0,
+			offReb: (seasonStats.offReb / seasonStats.minutes) * 36 || 0,
+			plusMinus: (seasonStats.plusMinus / seasonStats.minutes) * 36 || 0,
+			points: (seasonStats.points / seasonStats.minutes) * 36 || 0,
+			steals: (seasonStats.steals / seasonStats.minutes) * 36 || 0,
+			totalReb: (seasonStats.totalReb / seasonStats.minutes) * 36 || 0,
+			tpa: (seasonStats.tpa / seasonStats.minutes) * 36 || 0,
+			tpm: Math.round((seasonStats.tpm / seasonStats.minutes) * 36) || 0,
+			tpp: seasonStats.tpp || 0,
+			turnovers: seasonStats.minutes * 36 || 0,
+		};
+		let results = { totals: [seasonStats], per36: [per36], perGame: [perGame] };
+
+		return results;
 	}
 
 	/** Update season stats for all players in DB */
