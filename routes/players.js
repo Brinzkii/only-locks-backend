@@ -89,7 +89,7 @@ router.post('/:playerId/stats/game', authenticateJWT, ensureLoggedIn, async func
 	}
 });
 
-/** POST /stats/sort
+/** POST /stats/season/sort
  *
  *  Must include stat, time and order in body of request
  *
@@ -114,8 +114,8 @@ router.post('/:playerId/stats/game', authenticateJWT, ensureLoggedIn, async func
 
 router.post('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const { teamId, time, stat, order } = req.body;
-		const sortedStats = await Player.sortByStats(teamId, time, stat, order);
+		const { teamId, gameId, playerId, time, stat, order } = req.body;
+		const sortedStats = await Player.sortByStats(teamId, gameId, playerId, time, stat, order);
 		return res.json({ sortedStats });
 	} catch (err) {
 		return next(err);

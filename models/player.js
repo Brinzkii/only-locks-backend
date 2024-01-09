@@ -257,8 +257,6 @@ class Player {
 
 		if (!gameStats) throw new NotFoundError(`No game stats for player: ${playerId} | game: ${gameId}`);
 
-
-
 		return gameStats;
 	}
 
@@ -567,7 +565,8 @@ class Player {
 	 *
 	 * 	TeamId is optional
 	 *
-	 *  Date may be date string "DD-MM-YYYY", "today", "yesterday", "season"
+	 *  Date may be date string "DD-MM-YYYY", "today", "yesterday", "season",
+	 * "all games"
 	 *
 	 * 	Order may be DESC or ASC (case insensitive)
 	 *
@@ -580,7 +579,7 @@ class Player {
 	 *  Throws BadRequestError if method or order are invalid.
 	 **/
 
-	static async sortByStats(teamId, date = 'season', method = 'minutes', order = 'DESC') {
+	static async sortByStats(teamId, gameId, playerId, date = 'season', method = 'minutes', order = 'DESC') {
 		const lowDate = date.toLowerCase();
 		const lowOrder = order.toLowerCase();
 		const lowMethod = method.toLowerCase();
@@ -739,6 +738,64 @@ class Player {
 					ORDER BY ${lowMethod} ${lowOrder}
 					LIMIT 10`,
 					[day]
+				);
+			}
+		} else if (lowDate === 'all games') {
+			if (playerId) {
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, ga.id AS "gameId", gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					FROM game_stats gs
+					JOIN players p ON gs.player_id = p.id
+					JOIN games ga ON gs.game_id = ga.id
+					JOIN TEAMS t ON p.team_id = t.id
+					WHERE p.id = $1
+					ORDER BY ${lowMethod} ${lowOrder}`,
+					[playerId]
+				);
+			} else if (teamId) {
+				if (gameId) {
+					playersRes = await db.query(
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, ga.id AS "gameId", gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+						FROM game_stats gs
+						JOIN players p ON gs.player_id = p.id
+						JOIN games ga ON gs.game_id = ga.id
+						JOIN TEAMS t ON p.team_id = t.id
+						WHERE t.id = $1
+						AND ga.id = $2
+						ORDER BY ${lowMethod} ${lowOrder}`,
+						[teamId, gameId]
+					);
+				} else {
+					playersRes = await db.query(
+						`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, ga.id AS "gameId", gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+						FROM game_stats gs
+						JOIN players p ON gs.player_id = p.id
+						JOIN games ga ON gs.game_id = ga.id
+						JOIN TEAMS t ON p.team_id = t.id
+						WHERE t.id = $1
+						ORDER BY ${lowMethod} ${lowOrder}`,
+						[teamId]
+					);
+				}
+			} else if (gameId) {
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, ga.id AS "gameId", gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					FROM game_stats gs
+					JOIN players p ON gs.player_id = p.id
+					JOIN games ga ON gs.game_id = ga.id
+					JOIN TEAMS t ON p.team_id = t.id
+					WHERE ga.id = $1
+					ORDER BY ${lowMethod} ${lowOrder}`,
+					[gameId]
+				);
+			} else {
+				playersRes = await db.query(
+					`SELECT p.id, p.last_name || ', ' || p.first_name AS name, t.code, ga.id AS "gameId", gs.minutes, gs.points, gs.fgm, gs.fga, gs.fgp, gs.ftm, gs.fta, gs.ftp, gs.tpm, gs.tpa, gs.tpp, gs.total_reb AS "totalReb", gs.off_reb AS "offReb", gs.def_reb AS "defReb", gs.assists, gs.fouls, gs.steals, gs.turnovers, gs.blocks, gs.plus_minus AS "plusMinus"
+					FROM game_stats gs
+					JOIN players p ON gs.player_id = p.id
+					JOIN games ga ON gs.game_id = ga.id
+					JOIN TEAMS t ON p.team_id = t.id
+					ORDER BY ${lowMethod} ${lowOrder}`
 				);
 			}
 		} else {
