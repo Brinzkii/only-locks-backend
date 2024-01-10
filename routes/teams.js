@@ -41,41 +41,6 @@ router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, 
 	}	
 });
 
-/** PATCH /stats =>{ updateTeamStats } 
- * 
- * 	Updates team season stats
- * 
- * 	Authorization required: must be admin
- **/
-
-router.patch('/stats/season', authenticateJWT, ensureAdmin, async function (req, res, next) {
-	try {
-		await Team.updateSeasonStats();
-		return res.json({ updateTeamStats: 'success' });
-	} catch (err) {
-		return next(err);
-	}
-});
-
-/** PATCH /stats =>{ updateTeamStats }
- *
- * 	Updates team game stats
- *
- * 	Method in request body can be left off or "all"
- *
- * 	Authorization required: must be admin
- **/
-
-router.patch('/stats/games', authenticateJWT, ensureAdmin, async function (req, res, next) {
-	try {
-		const { method } = req.body;
-		await Team.updateGameStats(method);
-		return res.json({ updateTeamStats: 'success' });
-	} catch (err) {
-		return next(err);
-	}
-});
-
 /** GET /stats/sort
  * 
  *  Must include stat and order in body of request

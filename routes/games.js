@@ -28,38 +28,6 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 	}
 });
 
-/** PATCH /all => { updateAllGames }
- *
- * Updates all games in database
- *
- * Authorization required: must be admin
- **/
-
-router.patch('/all', ensureAdmin, async function (req, res, next) {
-	try {
-		await Game.updateAll();
-		return res.json({ updateAllGames: 'success' });
-	} catch (err) {
-		return next(err);
-	}
-});
-
-/** PATCH /recent => { updateRecentGames }
- *
- *  Updates yesterday and today's games
- *
- * Authorization required: must be admin
- */
-
-router.patch('/recent', ensureAdmin, async function (req, res, next) {
-	try {
-		await Game.updateRecent();
-		return res.json({ updateRecentGames: 'success' });
-	} catch (err) {
-		return next(err);
-	}
-});
-
 /** GET /[gameId] => { game }
  *
  *  Returns { id, date, location, homeId, homeName,

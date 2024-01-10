@@ -13,6 +13,7 @@ const teamRoutes = require('./routes/teams');
 const userRoutes = require('./routes/users');
 const playerRoutes = require('./routes/players');
 const gameRoutes = require('./routes/games');
+const updateRoutes = require('./routes/updates');
 
 const morgan = require('morgan');
 
@@ -28,6 +29,7 @@ app.use('/teams', teamRoutes);
 app.use('/users', userRoutes);
 app.use('/players', playerRoutes);
 app.use('/games', gameRoutes);
+app.use('/update', updateRoutes);
 
 /** Handle 404 errors -- this matches everything */
 app.use(function (req, res, next) {
