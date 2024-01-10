@@ -41,6 +41,7 @@ CREATE TABLE games (
         REFERENCES teams ON DELETE CASCADE,
     status TEXT NOT NULL,
     clock TEXT,
+    quarter INTEGER,
     score TEXT,
     winner INTEGER
         REFERENCES teams ON DELETE CASCADE

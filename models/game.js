@@ -44,7 +44,7 @@ class Game {
 
 	static async get(id) {
 		const gameRes = await db.query(
-			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
             FROM games g
 			JOIN teams t1 ON g.home_team = t1.id
 			JOIN teams t2 ON g.away_team = t2.id
@@ -70,7 +70,7 @@ class Game {
 
 	static async getAll() {
 		const gamesRes = await db.query(
-			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+			`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
             FROM games g
 			JOIN teams t1 ON g.home_team = t1.id
 			JOIN teams t2 ON g.away_team = t2.id`
@@ -326,7 +326,7 @@ class Game {
 
 		if (teamId && date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -338,7 +338,7 @@ class Game {
 			);
 		} else if (teamId && !date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -349,7 +349,7 @@ class Game {
 			);
 		} else {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
@@ -395,11 +395,12 @@ class Game {
 
 			db.query(
 				`UPDATE games 
-					SET status=$1, clock=$2, score=$3, winner=$4, date=$5
-					WHERE id=$6`,
+					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date=$6
+					WHERE id=$7`,
 				[
 					updatedGame.status.long.toLowerCase(),
 					updatedGame.status.clock,
+					updatedGame.periods.current,
 					score,
 					winner,
 					updatedGame.date.start,
@@ -448,11 +449,12 @@ class Game {
 
 			db.query(
 				`UPDATE games 
-					SET status=$1, clock=$2, score=$3, winner=$4, date=$5
-					WHERE id=$6`,
+					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date=$6
+					WHERE id=$7`,
 				[
 					updatedGame.status.long.toLowerCase(),
 					updatedGame.status.clock,
+					updatedGame.periods.current,
 					score,
 					winner,
 					updatedGame.date.start,
