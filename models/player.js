@@ -131,7 +131,7 @@ class Player {
 			tpa: seasonStats.tpa / seasonStats.gp || 0,
 			tpm: seasonStats.tpm / seasonStats.gp || 0,
 			tpp: seasonStats.tpp || 0,
-			turnovers: seasonStats.gp || 0,
+			turnovers: seasonStats.turnovers / seasonStats.gp || 0,
 		};
 
 		const per36 = {
@@ -156,9 +156,9 @@ class Player {
 			steals: (seasonStats.steals / seasonStats.minutes) * 36 || 0,
 			totalReb: (seasonStats.totalReb / seasonStats.minutes) * 36 || 0,
 			tpa: (seasonStats.tpa / seasonStats.minutes) * 36 || 0,
-			tpm: Math.round((seasonStats.tpm / seasonStats.minutes) * 36) || 0,
+			tpm: (seasonStats.tpm / seasonStats.minutes) * 36 || 0,
 			tpp: seasonStats.tpp || 0,
-			turnovers: seasonStats.minutes * 36 || 0,
+			turnovers: (seasonStats.turnovers / seasonStats.minutes) * 36 || 0,
 		};
 		let results = { totals: [seasonStats], per36: [per36], perGame: [perGame] };
 
@@ -248,7 +248,9 @@ class Player {
 				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.game_id AS "gameId", g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
 				FROM game_stats g
 				JOIN players p ON g.player_id = p.id
-				WHERE g.player_id = $1`,
+				JOIN games ON g.game_id = games.id
+				WHERE g.player_id = $1
+				ORDER BY games.date ASC`,
 				[playerId]
 			);
 		}
