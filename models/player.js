@@ -275,7 +275,6 @@ class Player {
 		const players = playersRes.rows;
 
 		for (let player of players) {
-			await delay(150);
 			let URL = BASE_URL + `players/statistics?id=${player.id}&game=${game.id}&season=2023`;
 			const response = await axios.get(URL, { headers });
 			let playerStats = response.data.response;
@@ -474,7 +473,6 @@ class Player {
 
 				// For each player, request game stats from external API and either update or insert into DB
 				for (let player of players) {
-					await delay(150);
 					let URL = BASE_URL + `players/statistics?id=${player.id}&game=${game.id}&season=2023`;
 					const response = await axios.get(URL, { headers });
 					let playerStats = response.data.response;
@@ -555,7 +553,7 @@ class Player {
 				}
 			}
 		}
-		console.log('All player stats added / updated!');
+		console.log(`All player stats added / updated! @ ${moment().format('LLL')}`);
 		return;
 	}
 
