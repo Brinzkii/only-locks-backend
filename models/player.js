@@ -897,7 +897,7 @@ class Player {
 	static async playerPickData(games) {
 		if (!games || typeof games !== 'object')
 			throw new BadRequestError('Must include an array of games to get player pick data!');
-		let playerStats = [];
+		let playerStats = {};
 		for (let game of games) {
 			const playerStatsRes = await db.query(
 				`
@@ -906,12 +906,12 @@ class Player {
 		JOIN players p ON ss.player_id = p.id
 		JOIN teams t ON p.team_id = t.id
 		JOIN games g ON t.id = g.home_team OR t.id = g.away_team 
-		WHERE g.id = $1`,
+		WHERE g.id = $1
+		AND g.status = 'scheduled'`,
 				[game.id]
 			);
 			for (let p of playerStatsRes.rows) {
 				const perGame = {
-					id: p.id,
 					name: p.name,
 					gameId: p.gameId,
 					home: p.home,
@@ -924,7 +924,7 @@ class Player {
 					blocks: Math.floor(p.blocks / p.gp) + 0.5 || 0,
 					steals: Math.floor(p.steals / p.gp) + 0.5 || 0,
 				};
-				playerStats.push(perGame);
+				playerStats[p.id] = perGame;
 			}
 		}
 		return playerStats;
