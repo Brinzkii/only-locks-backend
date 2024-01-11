@@ -883,6 +883,52 @@ class Player {
 
 		return results;
 	}
+
+	/** Return potential player picks given an array of games happening today
+	 *
+	 * 	Returns [ { player }, ... ]
+	 * 		Where player is { id, name, gameId, home, away, date, points,
+	 * 						  assists, rebounds, tpm,
+	 * 						  blocks, steals }
+	 *
+	 * 	Throws BadRequestError if games array not included
+	 **/
+
+	static async playerPickData(games) {
+		if (!games || typeof games !== 'object')
+			throw new BadRequestError('Must include an array of games to get player pick data!');
+		let playerStats = [];
+		for (let game of games) {
+			const playerStatsRes = await db.query(
+				`
+		SELECT p.id, p.last_name || ', ' || p.first_name AS name, g.id AS "gameId", g.home_team AS home, g.away_team AS away, g.date, ss.gp, ss.points, ss.assists, ss.total_reb AS rebounds, ss.tpm, ss.blocks, ss.steals 
+		FROM season_stats ss
+		JOIN players p ON ss.player_id = p.id
+		JOIN teams t ON p.team_id = t.id
+		JOIN games g ON t.id = g.home_team OR t.id = g.away_team 
+		WHERE g.id = $1`,
+				[game.id]
+			);
+			for (let p of playerStatsRes.rows) {
+				const perGame = {
+					id: p.id,
+					name: p.name,
+					gameId: p.gameId,
+					home: p.home,
+					away: p.away,
+					date: p.date,
+					points: Math.floor(p.points / p.gp) + 0.5 || 0,
+					assists: Math.floor(p.assists / p.gp) + 0.5 || 0,
+					rebounds: Math.floor(p.rebounds / p.gp) + 0.5 || 0,
+					tpm: Math.floor(p.tpm / p.gp) + 0.5 || 0,
+					blocks: Math.floor(p.blocks / p.gp) + 0.5 || 0,
+					steals: Math.floor(p.steals / p.gp) + 0.5 || 0,
+				};
+				playerStats.push(perGame);
+			}
+		}
+		return playerStats;
+	}
 }
 
 module.exports = Player;

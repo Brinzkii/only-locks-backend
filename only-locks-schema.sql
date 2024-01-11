@@ -58,7 +58,8 @@ CREATE TABLE player_picks (
     stat TEXT NOT NULL,
     over_under TEXT NOT NULL,
     value INTEGER NOT NULL,
-    result BOOLEAN
+    result BOOLEAN,
+    point_value INTEGER DEFAULT 0
 );
 
 CREATE TABLE team_picks (
@@ -71,7 +72,8 @@ CREATE TABLE team_picks (
         REFERENCES games ON DELETE CASCADE,
     win_spread TEXT NOT NULL,
     value INTEGER,
-    result BOOLEAN
+    result BOOLEAN,
+    point_value INTEGER DEFAULT 0
 );
 
 CREATE TABLE followed_teams (
