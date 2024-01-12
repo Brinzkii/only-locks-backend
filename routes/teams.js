@@ -158,4 +158,25 @@ router.get('/:teamId/players', authenticateJWT, ensureLoggedIn, async function (
 	}
 });
 
+/** POST /stats/picks
+ * 
+ * 	Must include array of games
+ * 
+ * 	Returns data to be used for populating player pick options
+ * 
+ * 	Returns { teamId: { name, gameId, date, wins, losses }, ... }
+ * 
+ *  Authorization required: must be logged in
+ */
+
+router.post('/stats/picks', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const {games} = req.body
+		const teamPickData = await Team.teamPickData(games)
+		return res.json({teamPickData})
+	} catch(err) {
+		return next(err)
+	}
+})
+
 module.exports = router;

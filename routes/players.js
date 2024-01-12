@@ -3,7 +3,7 @@
 /** Routes for players. */
 
 const express = require('express');
-const { authenticateJWT, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, ensureAdmin, authenticateUpdateRequest } = require('../middleware/auth');
 const Player = require('../models/player');
 
 const router = express.Router();
@@ -64,7 +64,7 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 });
 
 /** GET /[playerId]/stats/game => { gameStats }
- * 
+ *
  * 	Can pass in gameId via request body for a specific game's stats
  *
  *	Returns { id, name, game, minutes, points, fgm, fga, fgp,
@@ -123,26 +123,26 @@ router.post('/stats/sort', authenticateJWT, ensureLoggedIn, async function (req,
 });
 
 /** POST /stats/picks
- * 
+ *
  * 	Must include array of games
- * 
+ *
  * 	Returns data to be used for populating player pick options
- * 
- * 	Returns [ { pickData } ]
- * 		Where pickData is { id, name, gameId, home, away, points, rebounds, 	
+ *
+ * 	Returns { playerId: { pickData } }
+ * 		Where pickData is { id, name, gameId, home, away, points, rebounds,
  * 						    tpm, steals, assists, blocks }
- * 
+ *
  *  Authorization required: must be logged in
  */
 
 router.post('/stats/picks', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const {games} = req.body
-		const playerPickData = await Player.playerPickData(games)
-		return res.json({playerPickData})
-	} catch(err) {
-		return next(err)
+		const { games } = req.body;
+		const playerPickData = await Player.playerPickData(games);
+		return res.json({ playerPickData });
+	} catch (err) {
+		return next(err);
 	}
-})
+});
 
 module.exports = router;

@@ -14,7 +14,7 @@ const router = express.Router();
  *
  * Updates all games in database
  *
- * Authorization required: must be admin
+ * Authorization required: special update request
  **/
 
 router.patch('/games/all', authenticateUpdateRequest, async function (req, res, next) {
@@ -30,7 +30,7 @@ router.patch('/games/all', authenticateUpdateRequest, async function (req, res, 
  *
  *  Updates yesterday and today's games
  *
- * Authorization required: must be admin
+ * Authorization required: special update request
  */
 
 router.patch('/games/recent', authenticateUpdateRequest, async function (req, res, next) {
@@ -46,7 +46,7 @@ router.patch('/games/recent', authenticateUpdateRequest, async function (req, re
  *
  * 	Updates player season stats
  *
- * 	Authorization required: must be admin
+ * 	Authorization required: special update request
  **/
 
 router.patch('/players/season', authenticateUpdateRequest, async function (req, res, next) {
@@ -60,11 +60,11 @@ router.patch('/players/season', authenticateUpdateRequest, async function (req, 
 
 /** PATCH /players/games =>{ updatePlayerGameStats }
  *
- * 	Updates all player game stats for a given game
+ * 	Updates all recent player game stats
  *
  * 	Include { game: gameId } in request body
  *
- * 	Authorization required: must be admin
+ * 	Authorization required: special update request
  **/
 
 router.patch('/players/games', authenticateUpdateRequest, async function (req, res, next) {
@@ -86,7 +86,7 @@ router.patch('/players/games', authenticateUpdateRequest, async function (req, r
  *
  * 	Include { game: gameId } in request body
  *
- * 	Authorization required: must be admin
+ * 	Authorization required: special update request
  **/
 
 router.patch('/players/game/:gameId', authenticateUpdateRequest, async function (req, res, next) {
@@ -108,7 +108,7 @@ router.patch('/players/game/:gameId', authenticateUpdateRequest, async function 
  *
  * 	Updates team season stats
  *
- * 	Authorization required: must be admin
+ * 	Authorization required: special update request
  **/
 
 router.patch('/teams/season', authenticateUpdateRequest, async function (req, res, next) {
@@ -126,7 +126,7 @@ router.patch('/teams/season', authenticateUpdateRequest, async function (req, re
  *
  * 	Method in request body can be left off or "all"
  *
- * 	Authorization required: must be admin
+ * 	Authorization required: special update request
  **/
 
 router.patch('/teams/games', authenticateUpdateRequest, async function (req, res, next) {
@@ -134,6 +134,38 @@ router.patch('/teams/games', authenticateUpdateRequest, async function (req, res
 		const { method } = req.body;
 		await Team.updateGameStats(method);
 		return res.json({ updateTeamStats: 'success' });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** PATCH /picks/players
+ *
+ * 	Updates existing player picks in DB with end result
+ *
+ * 	Authorization required: authenitcated update request
+ */
+
+router.patch('/picks/players', authenticateUpdateRequest, async function (req, res, next) {
+	try {
+		const updatePlayerPicks = await Player.updatePicks();
+		return res.json(updatePlayerPicks);
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** PATCH /picks/teams
+ *
+ * 	Updates existing player picks in DB with end result
+ *
+ * 	Authorization required: authenitcated update request
+ */
+
+router.patch('/picks/teams', authenticateUpdateRequest, async function (req, res, next) {
+	try {
+		const updateTeamPicks = await Team.updatePicks();
+		return res.json(updatePlayerPicks);
 	} catch (err) {
 		return next(err);
 	}

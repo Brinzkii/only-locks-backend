@@ -267,7 +267,10 @@ class Player {
 	static async updateGameStats(gameId) {
 		if (!gameId) throw new BadRequestError('Must include a game ID to update player game stats!');
 
-		const game = await Game.checkValid(gameId);
+		const game = await db.query('SELECT id FROM games WHERE id = $1', [gameId])
+
+		if (!game.rows.length) throw new BadRequestError(`Invalid gameId: ${gameId}`)
+
 		const playersRes = await db.query(
 			`SELECT id, last_name || ', ' || first_name AS name FROM players WHERE team_id = $1 OR team_id = $2`,
 			[game.home_team, game.away_team]
@@ -927,6 +930,61 @@ class Player {
 			}
 		}
 		return playerStats;
+	}
+
+	/** Grabs all open player picks and updates them if game stats exist and 
+	 * 	the game is finished 
+	 */
+
+	static async updatePicks() {
+		const picksRes = await db.query(`SELECT pp.id, pp.username, pp.player_id AS "playerId", pp.stat, pp.over_under AS "overUnder", pp.value, pp.game_id AS "gameId", pp.point_value AS "pointValue" 
+		FROM player_picks pp 
+		JOIN games g ON pp.game_id = g.id
+		WHERE result IS NULL
+		AND g.status = 'finished'`)
+		const picks = picksRes.rows
+
+		console.log('PICKS:', picks)
+
+		if (!picks.length) return {updatePlayerPicks: 'No eligible player picks to update yet'}
+
+		for (let pick of picks) {
+			if (pick.stat === 'rebounds') pick.stat = 'off_reb + def_reb'
+			const resultRes = await db.query(`SELECT ${pick.stat} AS "amount" FROM game_stats WHERE player_id=$1 AND game_id=$2`, [pick.playerId, pick.gameId])
+			const result = resultRes.rows[0]
+			console.log(`RESULT:`, result)
+
+			if (!result) throw new NotFoundError(`No game stats exist for gameId: ${pick.gameId}`)
+
+			switch(pick.overUnder) {
+				case 'OVER':
+					if (result.amount > pick.value) {
+						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
+						await db.query('UPDATE users SET wins = wins + 1 WHERE username = $1', [pick.username])
+					} else {
+						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
+						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])
+					}
+					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`)
+					break;
+
+				case 'UNDER':
+					if (result.amount < pick.value) {
+						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
+						await db.query('UPDATE users SET wins = wins + 1 WHERE username = $1', [pick.username])
+					} else {
+						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
+						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])
+					}
+					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`)
+					break;
+
+				default:
+					break;
+			}
+		}
+		console.log(`All eligible player picks update finished @ ${moment().format('LLL')}`)
+		return {updatePlayerPicks: "success"}
 	}
 }
 

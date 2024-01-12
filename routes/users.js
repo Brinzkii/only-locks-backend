@@ -4,7 +4,7 @@
 
 const jsonschema = require('jsonschema');
 const express = require('express');
-const { ensureCorrectUser, ensureLoggedIn, ensureAdmin, authenticateJWT } = require('../middleware/auth');
+const { ensureCorrectUser, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
 const userRegisterSchema = require('../schemas/userNew.json');
 const { createToken } = require('../helpers/tokens');
 const User = require('../models/user');
@@ -13,12 +13,12 @@ const router = express.Router();
 
 /** POST / { user }  => { user, token }
  *
- * Adds a new user. This is not the registration endpoint --- instead, 
- * this is only for admin users to add new users. The new user being 
+ * Adds a new user. This is not the registration endpoint --- instead,
+ * this is only for admin users to add new users. The new user being
  * added can be anadmin.
  *
- * This returns the newly created user and an authentication token for 
- * them:{user: { username, firstName, lastName, email, isAdmin }, 
+ * This returns the newly created user and an authentication token for
+ * them:{user: { username, firstName, lastName, email, isAdmin },
  * token }
  *
  * Authorization required: admin
@@ -59,7 +59,7 @@ router.get('/:username', async function (req, res, next) {
 });
 
 /** POST /[username]/[playerId]  { state } => { application }
- * 
+ *
  * Follow a player
  *
  * Returns { user }
@@ -78,7 +78,7 @@ router.post('/:username/players/:playerId', ensureCorrectUser, async function (r
 });
 
 /** DELETE /[username]/[playerId]  { state } => { application }
- * 
+ *
  * Unfollow a player
  *
  * Returns { user }
@@ -97,7 +97,7 @@ router.delete('/:username/players/:playerId', ensureCorrectUser, async function 
 });
 
 /** POST /[username]/teams/[teamId]  { state } => { application }
- * 
+ *
  * Follow a team
  *
  * Returns { user }
@@ -116,7 +116,7 @@ router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, 
 });
 
 /** DELETE /[username]/teams/[teamId]  { state } => { application }
- * 
+ *
  * Unfollow a team
  *
  * Returns { user }
@@ -217,8 +217,8 @@ router.delete('/:username/picks/players/:pickId', ensureCorrectUser, async funct
 
 router.post('/:username/picks/teams', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const { teamId, gameId, win_spread, value } = req.body;
-		const pick = await User.teamPick(req.params.username, teamId, gameId, win_spread, value);
+		const { teamId, gameId } = req.body;
+		const pick = await User.teamPick(req.params.username, teamId, gameId);
 		return res.json({ pick });
 	} catch (err) {
 		return next(err);

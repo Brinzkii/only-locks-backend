@@ -557,11 +557,72 @@ class Team {
 					}
 					console.log(`Added stats for game: ${game.id}`);
 				}
-				await delay(250);
 			} else console.log(`Game ${game.id} has not started yet`);
 		}
 		console.log('Finished updating team game stats!');
 		return;
+	}
+
+	/** Return potential team picks given an array of games happening today
+	 *
+	 * 	Returns [ { team }, ... ]
+	 * 		Where team is { id, name, gameId, date, wins, losses }
+	 *
+	 * 	Throws BadRequestError if games array not included
+	 **/
+
+	static async teamPickData(games) {
+		if (!games || typeof games !== 'object')
+			throw new BadRequestError('Must include an array of games to get team pick data!');
+		let teams = {};
+		for (let game of games) {
+			const teamsRes = await db.query(
+				`
+		SELECT t.id, t.name, g.id AS "gameId", g.date, ts.wins, ts.losses 
+		FROM teams t
+		JOIN team_stats ts ON t.id = ts.team_id
+		JOIN games g ON t.id = g.home_team OR t.id = g.away_team 
+		WHERE g.id = $1
+		AND g.status = 'scheduled'`,
+				[game.id]
+			);
+			for (let t of teamsRes.rows) {
+				teams[t.id] = t;
+			}
+		}
+		return teams;
+	}
+
+	/** Grabs all open player picks and updates them if game stats exist and
+	 * 	the game is finished
+	 */
+
+	static async updatePicks() {
+		const picksRes =
+			await db.query(`SELECT tp.id, tp.username, tp.team_id AS "teamId",  tp.game_id AS "gameId", tp.point_value AS "pointValue", g.winner 
+		FROM team_picks tp 
+		JOIN games g ON tp.game_id = g.id
+		WHERE result IS NULL
+		AND g.status = 'finished'`);
+		const picks = picksRes.rows;
+
+		console.log('PICKS:', picks);
+
+		if (!picks.length) return { updateTeamPicks: 'No eligible team picks to update yet' };
+
+		for (let pick of picks) {
+			if (pick.winner === pick.teamId) {
+				await db.query(`UPDATE player_picks SET result=true WHERE id = $1`, [pick.id]);
+				await db.query(`UPDATE users SET wins = wins + 1 WHERE username = $1`, [pick.username]);
+			} else if (pick.winner !== pick.teamId) {
+				await db.query(`UPDATE player_picks SET result=false WHERE id = $1`, [pick.id]);
+				await db.query(`UPDATE users SET losses = losses + 1 WHERE username = $1`, [pick.username]);
+			}
+
+			console.log(`Team pick ${pick.id} and User ${pick.username} updated!`);
+		}
+		console.log(`All eligible team picks update finished @ ${moment().format('LLL')}`);
+		return { updateTeamPicks: 'success' };
 	}
 }
 module.exports = Team;

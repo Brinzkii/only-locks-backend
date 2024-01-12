@@ -1,8 +1,8 @@
 CREATE TABLE users (
     username VARCHAR(25) PRIMARY KEY,
     password TEXT NOT NULL,
-    wins INTEGER,
-    losses INTEGER,
+    wins INTEGER DEFAULT 0,
+    losses INTEGER DEFAULT 0,
     is_admin BOOLEAN DEFAULT false
 );
 
@@ -70,8 +70,6 @@ CREATE TABLE team_picks (
         REFERENCES teams ON DELETE CASCADE,
     game_id INTEGER
         REFERENCES games ON DELETE CASCADE,
-    win_spread TEXT NOT NULL,
-    value INTEGER,
     result BOOLEAN,
     point_value INTEGER DEFAULT 0
 );

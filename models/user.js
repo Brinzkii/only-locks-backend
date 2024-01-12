@@ -278,8 +278,8 @@ class User {
 		await Player.checkValid(playerId);
 		const game = await Game.checkValid(gameId);
 
-		const checkDuplicate = db.query(
-			`SELECT id FROM player_picks WHERE username = $1 AND player_id = $2 AND gameId = $3 AND stat = $4`,
+		const checkDuplicate = await db.query(
+			`SELECT id FROM player_picks WHERE username = $1 AND player_id = $2 AND game_id = $3 AND stat = $4`,
 			[username, playerId, gameId, stat]
 		);
 
@@ -337,23 +337,25 @@ class User {
 	 * 		Where pick is { id, team_id, game_id, win_spread, value }
 	 *
 	 * 	Throws NotFoundError if user, team or game not found
-	 * 	Throws BadRequest error if win_spread invalid
+	 * 	Throws BadRequest error if team pick already exists for given game
 	 **/
 
-	static async teamPick(username, teamId, gameId, win_spread, value) {
+	static async teamPick(username, teamId, gameId) {
 		await this.checkValid(username);
 		await Team.checkValid(teamId);
 		await Game.checkValid(gameId);
-		const winOrSpread = win_spread.toLowerCase();
 
-		if (winOrSpread != 'win' && winOrSpread != 'spread') {
-			throw new BadRequestError('Win_spread must be either "win" or "spread"');
-		}
+		const checkDuplicate = await db.query('SELECT id FROM team_picks WHERE username = $1 AND game_id = $2', [
+			username,
+			gameId,
+		]);
+
+		if (checkDuplicate.rows.length) throw new BadRequestError('Can only place one team pick per game!');
 
 		const pickRes = await db.query(
 			`
-		INSERT INTO team_picks (username, team_id, game_id, win_spread, value) VALUES ($1, $2, $3, $4, $5) RETURNING id, team_id, game_id, win_spread, value`,
-			[username, teamId, gameId, win_spread.toUpperCase(), value]
+		INSERT INTO team_picks (username, team_id, game_id) VALUES ($1, $2, $3) RETURNING id, team_id, game_id`,
+			[username, teamId, gameId]
 		);
 
 		const pick = pickRes.rows[0];
@@ -372,7 +374,7 @@ class User {
 	static async deleteTeamPick(username, pickId) {
 		const user = await this.checkValid(username);
 		const pickRes = await db.query(
-			`SELECT id, team_id AS "teamId", game_id AS "gameId", win_spread AS "winSpread", value from team_picks WHERE id = $1`,
+			`SELECT id, team_id AS "teamId", game_id AS "gameId" from team_picks WHERE id = $1`,
 			[pickId]
 		);
 
@@ -397,7 +399,7 @@ class User {
 		await this.checkValid(username);
 		let picks = { playerPicks: [], teamPicks: [] };
 		const playerPicksRes = await db.query(
-			`SELECT pp.id, p.last_name || ', ' || p.first_name AS player, t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under, pp.value, pp.result
+			`SELECT pp.id, p.last_name || ', ' || p.first_name AS player, t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under, pp.value, pp.result, pp.point_value AS "pointValue"
 		FROM player_picks pp
 		JOIN players p ON pp.player_id = p.id
 		JOIN games g ON pp.game_id = g.id
@@ -410,7 +412,7 @@ class User {
 		picks.playerPicks = playerPicksRes.rows;
 
 		const teamPicksRes = await db.query(
-			`SELECT tp.id, t.name, t1.code || ' vs ' || t2.code AS game, g.date, tp.win_spread, tp.value
+			`SELECT tp.id, t.name as selected, t1.code || ' vs ' || t2.code AS game, g.date
 		FROM team_picks tp
 		JOIN teams t ON tp.team_id = t.id
 		JOIN games g ON tp.game_id = g.id
