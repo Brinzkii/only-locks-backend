@@ -264,28 +264,31 @@ class User {
 	 * 		Where pick is { id, playerId, gameId, stat, overUnder, value }
 	 *
 	 * 	Throws NotFoundError if user, player or game not found
-	 * 	Throws BadRequest error if stat category invalid
+	 * 	Throws BadRequestError if stat category invalid
+	 * 	Throws BadRequestError if game has already started
+	 * 	Throws BadRequestError if point_value not included
+	 * 	Throws BadRequestError if player has already made a pick for the same
+	 * 	player, game and stat
 	 **/
 
-	static async playerPick(username, playerId, gameId, stat, over_under, value) {
-		const validMethods = [
-			'points',
-			'fgm',
-			'fga',
-			'ftm',
-			'fta',
-			'tpm',
-			'tpa',
-			'rebounds',
-			'assists',
-			'steals',
-			'turnovers',
-			'blocks',
-		];
+	static async playerPick(username, playerId, gameId, stat, over_under, value, point_value) {
+		const validMethods = ['points', 'tpm', 'rebounds', 'assists', 'steals', 'blocks'];
 		const isValid = validMethods.indexOf(stat.toLowerCase());
 		await this.checkValid(username);
 		await Player.checkValid(playerId);
-		await Game.checkValid(gameId);
+		const game = await Game.checkValid(gameId);
+
+		const checkDuplicate = db.query(
+			`SELECT id FROM player_picks WHERE username = $1 AND player_id = $2 AND gameId = $3 AND stat = $4`,
+			[username, playerId, gameId, stat]
+		);
+
+		if (checkDuplicate.rows.length) throw new BadRequestError('Only one pick may be placed per player/stat/game!');
+
+		if (!point_value) throw new BadRequestError('Must include point_value for a new pick!');
+
+		if (game.status !== 'scheduled')
+			throw new BadRequestError('Cannot place picks on games that have already started!');
 
 		if (isValid === -1) throw new BadRequestError(`Stat selection is limited to the following: ${validMethods}`);
 
@@ -294,8 +297,8 @@ class User {
 
 		const pickRes = await db.query(
 			`
-		INSERT INTO player_picks (username, player_id, game_id, stat, over_under, value) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, player_id AS "playerId", game_id AS "gameId", stat, over_under AS "overUnder", value`,
-			[username, playerId, gameId, stat, over_under.toUpperCase(), value]
+		INSERT INTO player_picks (username, player_id, game_id, stat, over_under, value, point_value) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, player_id AS "playerId", game_id AS "gameId", stat, over_under AS "overUnder", value, point_value AS "pointValue"`,
+			[username, playerId, gameId, stat, over_under.toUpperCase(), value, point_value]
 		);
 
 		const pick = pickRes.rows[0];

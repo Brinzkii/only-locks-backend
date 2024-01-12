@@ -455,11 +455,10 @@ class Player {
 			}
 		} else {
 			// Get only games occurring yesterday, today or tomorrow
-			const yesterday = moment().subtract(1, 'days');
-			const tomorrow = moment().add(1, 'days');
+			const today = moment().format('YYYYMMDD');
 			const gamesRes = await db.query(
-				`SELECT id, home_team, away_team FROM games WHERE date >= $1 AND date <= $2`,
-				[yesterday.format('LL'), tomorrow.format('LL')]
+				`SELECT id, home_team, away_team FROM games WHERE DATE(date) = $1 OR status = $2`,
+				[today, 'in play']
 			);
 			const games = gamesRes.rows;
 
@@ -553,7 +552,7 @@ class Player {
 				}
 			}
 		}
-		console.log(`All player stats added / updated! @ ${moment().format('LLL')}`);
+		console.log(`All player stats added / updated @ ${moment().format('LLL')}!`);
 		return;
 	}
 

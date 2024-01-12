@@ -19,7 +19,7 @@ class Game {
 
 	static async checkValid(gameId) {
 		const gameRes = await db.query(
-			`SELECT id, date, location, home_team, away_team
+			`SELECT id, date, location, home_team, away_team, status
             FROM games
             WHERE id = $1`,
 			[gameId]

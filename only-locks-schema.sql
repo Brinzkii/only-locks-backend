@@ -57,7 +57,7 @@ CREATE TABLE player_picks (
         REFERENCES games ON DELETE CASCADE,
     stat TEXT NOT NULL,
     over_under TEXT NOT NULL,
-    value INTEGER NOT NULL,
+    value REAL NOT NULL,
     result BOOLEAN,
     point_value INTEGER DEFAULT 0
 );

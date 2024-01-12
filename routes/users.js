@@ -13,12 +13,13 @@ const router = express.Router();
 
 /** POST / { user }  => { user, token }
  *
- * Adds a new user. This is not the registration endpoint --- instead, this is
- * only for admin users to add new users. The new user being added can be an
- * admin.
+ * Adds a new user. This is not the registration endpoint --- instead, 
+ * this is only for admin users to add new users. The new user being 
+ * added can be anadmin.
  *
- * This returns the newly created user and an authentication token for them:
- *  {user: { username, firstName, lastName, email, isAdmin }, token }
+ * This returns the newly created user and an authentication token for 
+ * them:{user: { username, firstName, lastName, email, isAdmin }, 
+ * token }
  *
  * Authorization required: admin
  **/
@@ -58,6 +59,8 @@ router.get('/:username', async function (req, res, next) {
 });
 
 /** POST /[username]/[playerId]  { state } => { application }
+ * 
+ * Follow a player
  *
  * Returns { user }
  *
@@ -75,6 +78,8 @@ router.post('/:username/players/:playerId', ensureCorrectUser, async function (r
 });
 
 /** DELETE /[username]/[playerId]  { state } => { application }
+ * 
+ * Unfollow a player
  *
  * Returns { user }
  *
@@ -92,6 +97,8 @@ router.delete('/:username/players/:playerId', ensureCorrectUser, async function 
 });
 
 /** POST /[username]/teams/[teamId]  { state } => { application }
+ * 
+ * Follow a team
  *
  * Returns { user }
  *
@@ -109,6 +116,8 @@ router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, 
 });
 
 /** DELETE /[username]/teams/[teamId]  { state } => { application }
+ * 
+ * Unfollow a team
  *
  * Returns { user }
  *
@@ -143,7 +152,7 @@ router.get('/:username/picks', ensureLoggedIn, async function (req, res, next) {
 
 /** POST /[username]/picks/player  { state } => { application }
  *
- * 	Body must include { playerId, gameId, stat, over_under, value }
+ * 	Body must include { playerId, gameId, stat, over_under, value, point_value }
  * 		Where playerId is an integer
  *
  * 		Where gameId is an integer
@@ -162,8 +171,8 @@ router.get('/:username/picks', ensureLoggedIn, async function (req, res, next) {
 
 router.post('/:username/picks/players', ensureCorrectUser, async function (req, res, next) {
 	try {
-		const { playerId, gameId, stat, over_under, value } = req.body;
-		const pick = await User.playerPick(req.params.username, playerId, gameId, stat, over_under, value);
+		const { playerId, gameId, stat, over_under, value, point_value } = req.body;
+		const pick = await User.playerPick(req.params.username, playerId, gameId, stat, over_under, value, point_value);
 		return res.json({ pick });
 	} catch (err) {
 		return next(err);
