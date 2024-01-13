@@ -6,6 +6,7 @@ const Player = require('./player');
 const Game = require('./game');
 
 const { BCRYPT_WORK_FACTOR } = require('../config.js');
+const e = require('cors');
 
 /** Related functions for users. */
 
@@ -401,17 +402,36 @@ class User {
 		await this.checkValid(username);
 		let picks = { playerPicks: [], teamPicks: [] };
 		const playerPicks = await db.query(
-			`SELECT pp.id AS "pickId", p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.id AS "gameId", g.score, g.clock, g.quarter, g.status, gs.points, gs.assists, gs.tpm, gs.def_reb + gs.off_reb AS rebounds, gs.steals, gs.blocks
+			`SELECT pp.id AS "pickId", p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.id AS "gameId", g.location, g.score, g.clock, g.quarter, g.status
 		FROM player_picks pp
 		JOIN players p ON pp.player_id = p.id
 		JOIN games g ON pp.game_id = g.id
-		JOIN game_stats gs ON pp.player_id = gs.player_id AND pp.game_id = gs.game_id
 		JOIN teams t1 ON g.home_team = t1.id
 		JOIN teams t2 ON g.away_team = t2.id
 		WHERE pp.username = $1
 		ORDER BY g.date DESC`,
 			[username]
 		);
+
+		for (let pick of playerPicks.rows) {
+			if (pick.status === 'in play' || pick.status === 'finished') {
+				const liveStats = await db.query(
+					`
+				SELECT points, assists, tpm, def_reb + off_reb AS rebounds, steals, blocks
+				FROM game_stats
+				WHERE game_id = $1 AND player_id = $2`,
+					[pick.gameId, pick.playerId]
+				);
+
+				pick.points = liveStats.rows[0].points || 0;
+				pick.tpm = liveStats.rows[0].tpm || 0;
+				pick.rebounds = liveStats.rows[0].rebounds || 0;
+				pick.steals = liveStats.rows[0].steals || 0;
+				pick.blocks = liveStats.rows[0].blocks || 0;
+				pick.assists = liveStats.rows[0].assists || 0;
+			}
+		}
+
 		picks.playerPicks = playerPicks.rows;
 
 		const playerWins = await db.query(
@@ -425,7 +445,7 @@ class User {
 		picks.playerPickRecord = `${playerWins.rows[0].wins} - ${playerLosses.rows[0].losses}`;
 
 		const teamPicks = await db.query(
-			`SELECT tp.id AS "pickId", t.name as selected, t1.code || ' vs ' || t2.code AS game, g.id AS "gameId", g.date, tp.result, g.score, g.clock, g.quarter, g.winner, g.status
+			`SELECT tp.id AS "pickId", t.name as selected, t.code AS "selectedCode", t.id AS "selectedId", t1.code || ' vs ' || t2.code AS game, g.id AS "gameId", g.location, g.date, tp.result, g.score, g.clock, g.quarter, g.winner, g.status
 		FROM team_picks tp
 		JOIN teams t ON tp.team_id = t.id
 		JOIN games g ON tp.game_id = g.id
@@ -435,6 +455,34 @@ class User {
 		ORDER BY g.date DESC`,
 			[username]
 		);
+
+		for (let pick of teamPicks.rows) {
+			if (pick.score !== 'TBD') {
+				let score = {};
+				let points = pick.score.split('-');
+				pick.game.split('vs').map((code, idx) => {
+					score[code.trim()] = Number(points[idx]);
+				});
+
+				let opponentScore;
+				let selectedScore;
+				if (Object.keys(score)[0] === pick.selectedCode) {
+					selectedScore = score[pick.selectedCode];
+					opponentScore = score[Object.keys(score)[1]];
+				} else {
+					selectedScore = score[pick.selectedCode];
+					opponentScore = score[Object.keys(score)[0]];
+				}
+
+				let leading = false;
+				if (selectedScore > opponentScore) {
+					leading = true;
+				}
+
+				pick.isLeading = leading;
+			}
+		}
+
 		picks.teamPicks = teamPicks.rows;
 
 		const teamWins = await db.query(`SELECT COUNT(*) AS wins FROM team_picks WHERE username = $1 AND result=true`, [

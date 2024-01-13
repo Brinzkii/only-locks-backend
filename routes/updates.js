@@ -165,7 +165,7 @@ router.patch('/picks/players', authenticateUpdateRequest, async function (req, r
 router.patch('/picks/teams', authenticateUpdateRequest, async function (req, res, next) {
 	try {
 		const updateTeamPicks = await Team.updatePicks();
-		return res.json(updatePlayerPicks);
+		return res.json(updateTeamPicks);
 	} catch (err) {
 		return next(err);
 	}

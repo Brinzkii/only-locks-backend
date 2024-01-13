@@ -326,10 +326,12 @@ class Game {
 
 		if (teamId && date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", ts1.wins || ' - ' || ts1.losses AS "homeRecord", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", ts2.wins || ' - ' || ts2.losses AS "awayRecord", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
+				JOIN team_stats ts1 ON t1.id = ts1.team_id
+				JOIN team_stats ts2 ON t2.id = ts2.team_id
 				WHERE g.home_team = $1
 				OR g.away_team = $1
 				AND g.date = $2
@@ -338,10 +340,12 @@ class Game {
 			);
 		} else if (teamId && !date) {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", ts1.wins || ' - ' || ts1.losses AS "homeRecord", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", ts2.wins || ' - ' || ts2.losses AS "awayRecord", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
+				JOIN team_stats ts1 ON t1.id = ts1.team_id
+				JOIN team_stats ts2 ON t2.id = ts2.team_id
 				WHERE g.home_team = $1
 				OR g.away_team = $1
 				ORDER BY g.date ASC`,
@@ -349,10 +353,12 @@ class Game {
 			);
 		} else {
 			gamesRes = await db.query(
-				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", g.clock, g.score, g.quarter, g.status, g.winner
+				`SELECT g.id, g.date, g.location, t1.id AS "homeId", t1.name AS "homeName", t1.code AS "homeCode", t1.logo AS "homeLogo", ts1.wins || ' - ' || ts1.losses AS "homeRecord", t2.id AS "awayId", t2.name AS "awayName", t2.code AS "awayCode", t2.logo AS "awayLogo", ts2.wins || ' - ' || ts2.losses AS "awayRecord", g.clock, g.score, g.quarter, g.status, g.winner
 				FROM games g
 				JOIN teams t1 ON g.home_team = t1.id
 				JOIN teams t2 ON g.away_team = t2.id
+				JOIN team_stats ts1 ON t1.id = ts1.team_id
+				JOIN team_stats ts2 ON t2.id = ts2.team_id
 				WHERE DATE(g.date) = $1
 				ORDER BY g.date ASC`,
 				[date]

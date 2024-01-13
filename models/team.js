@@ -602,7 +602,7 @@ class Team {
 			await db.query(`SELECT tp.id, tp.username, tp.team_id AS "teamId",  tp.game_id AS "gameId", tp.point_value AS "pointValue", g.winner 
 		FROM team_picks tp 
 		JOIN games g ON tp.game_id = g.id
-		WHERE result IS NULL
+		WHERE tp.result IS NULL
 		AND g.status = 'finished'`);
 		const picks = picksRes.rows;
 
@@ -612,10 +612,10 @@ class Team {
 
 		for (let pick of picks) {
 			if (pick.winner === pick.teamId) {
-				await db.query(`UPDATE player_picks SET result=true WHERE id = $1`, [pick.id]);
+				await db.query(`UPDATE team_picks SET result=true WHERE id = $1`, [pick.id]);
 				await db.query(`UPDATE users SET wins = wins + 1 WHERE username = $1`, [pick.username]);
 			} else if (pick.winner !== pick.teamId) {
-				await db.query(`UPDATE player_picks SET result=false WHERE id = $1`, [pick.id]);
+				await db.query(`UPDATE team_picks SET result=false WHERE id = $1`, [pick.id]);
 				await db.query(`UPDATE users SET losses = losses + 1 WHERE username = $1`, [pick.username]);
 			}
 
