@@ -108,7 +108,8 @@ router.delete('/:username/players/:playerId', ensureCorrectUser, async function 
 router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
 	try {
 		const teamId = +req.params.teamId;
-		const user = await User.follow(req.params.username, teamId);
+		const playerId = undefined;
+		const user = await User.follow(req.params.username, playerId, teamId);
 		return res.json({ user });
 	} catch (err) {
 		return next(err);
@@ -127,7 +128,8 @@ router.post('/:username/teams/:teamId', ensureCorrectUser, async function (req, 
 router.delete('/:username/teams/:teamId', ensureCorrectUser, async function (req, res, next) {
 	try {
 		const teamId = +req.params.teamId;
-		const user = await User.unfollow(req.params.username, teamId);
+		const playerId = undefined;
+		const user = await User.unfollow(req.params.username, playerId, teamId);
 		return res.json({ user });
 	} catch (err) {
 		return next(err);

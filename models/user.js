@@ -96,7 +96,7 @@ class User {
 	 *  Returns { username, wins, losses, followedTeams, followedPlayers,
 	 * 		      picks }
 	 *   where followedTeams is [ { id, code, nickname, name, city, logo,
-	 *                              conference, division } ]
+	 *                              wins, losses, conference, division } ]
 	 *   where followedPlayers is [ { id, name, birthday, height,
 	 *                               weight, college, number, position, team } ]
 	 * 	 Where picks is { playerPicks, teamPicks }
@@ -108,9 +108,10 @@ class User {
 		const user = await this.checkValid(username);
 
 		const userFavTeams = await db.query(
-			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, t.division 
+			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, t.division, ts.wins, ts.losses 
             FROM followed_teams ft
 			JOIN teams t ON ft.team_id = t.id
+			JOIN team_stats ts ON ft.team_id = ts.id
             WHERE username = $1`,
 			[username]
 		);
@@ -118,9 +119,10 @@ class User {
 		user.followedTeams = userFavTeams.rows;
 
 		const userFavPlayers = await db.query(
-			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, p.birthday, p.height, p.weight, p.college, p.number, p.position, t.name AS team
+			`SELECT p.id, p.last_name || ', ' || p.first_name AS name, p.birthday, p.height, p.weight, p.college, p.number, p.position, t.name AS "teamName", t.code AS "teamCode", ss.points / ss.gp AS points, ss.tpm / ss.gp AS tpm, ss.assists / ss.gp AS assists, ss.total_reb / ss.gp AS rebounds, ss.steals / ss.gp AS steals, ss.blocks / ss.gp AS blocks 
             FROM followed_players fp
 			JOIN players p ON fp.player_id = p.id
+			JOIN season_stats ss ON fp.player_id = ss.player_id
 			JOIN teams t ON p.team_id = t.id
             WHERE username = $1`,
 			[username]
@@ -398,21 +400,32 @@ class User {
 	static async picks(username) {
 		await this.checkValid(username);
 		let picks = { playerPicks: [], teamPicks: [] };
-		const playerPicksRes = await db.query(
-			`SELECT pp.id, p.last_name || ', ' || p.first_name AS player, t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under, pp.value, pp.result, pp.point_value AS "pointValue"
+		const playerPicks = await db.query(
+			`SELECT pp.id AS "pickId", p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.id AS "gameId", g.score, g.clock, g.quarter, g.status, gs.points, gs.assists, gs.tpm, gs.def_reb + gs.off_reb AS rebounds, gs.steals, gs.blocks
 		FROM player_picks pp
 		JOIN players p ON pp.player_id = p.id
 		JOIN games g ON pp.game_id = g.id
+		JOIN game_stats gs ON pp.player_id = gs.player_id AND pp.game_id = gs.game_id
 		JOIN teams t1 ON g.home_team = t1.id
 		JOIN teams t2 ON g.away_team = t2.id
 		WHERE pp.username = $1
 		ORDER BY g.date DESC`,
 			[username]
 		);
-		picks.playerPicks = playerPicksRes.rows;
+		picks.playerPicks = playerPicks.rows;
 
-		const teamPicksRes = await db.query(
-			`SELECT tp.id, t.name as selected, t1.code || ' vs ' || t2.code AS game, g.date
+		const playerWins = await db.query(
+			`SELECT COUNT(*) AS wins FROM player_picks WHERE username = $1 AND result=true`,
+			[username]
+		);
+		const playerLosses = await db.query(
+			`SELECT COUNT(*) AS losses FROM player_picks WHERE username = $1 AND result=false`,
+			[username]
+		);
+		picks.playerPickRecord = `${playerWins.rows[0].wins} - ${playerLosses.rows[0].losses}`;
+
+		const teamPicks = await db.query(
+			`SELECT tp.id AS "pickId", t.name as selected, t1.code || ' vs ' || t2.code AS game, g.id AS "gameId", g.date, tp.result, g.score, g.clock, g.quarter, g.winner, g.status
 		FROM team_picks tp
 		JOIN teams t ON tp.team_id = t.id
 		JOIN games g ON tp.game_id = g.id
@@ -422,7 +435,16 @@ class User {
 		ORDER BY g.date DESC`,
 			[username]
 		);
-		picks.teamPicks = teamPicksRes.rows;
+		picks.teamPicks = teamPicks.rows;
+
+		const teamWins = await db.query(`SELECT COUNT(*) AS wins FROM team_picks WHERE username = $1 AND result=true`, [
+			username,
+		]);
+		const teamLosses = await db.query(
+			`SELECT COUNT(*) AS losses FROM team_picks WHERE username = $1 AND result=false`,
+			[username]
+		);
+		picks.teamPickRecord = `${teamWins.rows[0].wins} - ${teamLosses.rows[0].losses}`;
 
 		return picks;
 	}
