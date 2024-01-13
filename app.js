@@ -40,6 +40,23 @@ const frequentUpdateJob = schedule.scheduleJob('0,15,30,45 0-1,19-23 * * *', asy
 	}
 });
 
+// PLayer and team picks will update every hour to determine win/loss and update users win/loss total
+const hourlyUpdateJob = schedule.scheduleJob('0 0-2,20-23 * * *', async function (fireTime) {
+	try {
+		console.log(`
+		***** HOURLY UPDATES STARTED AT: ${fireTime} *****
+		`)
+		const result = await update.hourly()
+		if (result){
+			console.log(`
+		***** HOURLY UPDATES COMPLETED AT: ${moment().format('LTS')}*****
+		`);
+		}
+	} catch (err) {
+		console.error(err)
+	}
+})
+
 // Team season stats, player season stats, player and team picks will update once a day at 2 am
 const dailyUpdateJob = schedule.scheduleJob('0 2 * * *', async function (fireTime) {
 	try {

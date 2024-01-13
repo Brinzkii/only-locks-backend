@@ -37,6 +37,25 @@ class Update {
 		return true;
 	}
 
+	/** Runs every hour starting at 8pm going until 2am to update status of
+	 * picks
+	 **/
+	static async hourly() {
+		console.log(`Updating player picks (${moment().format('LLL')}) ...`);
+
+		await Player.updatePicks();
+
+		console.log(`Finished updating player picks @ ${moment().format('LLL')}!`);
+
+		console.log(`Updating games (${moment().format('LLL')}) ...`);
+
+		await Team.updatePicks();
+
+		console.log(`Finished updating team picks @ ${moment().format('LLL')}!`);
+
+		return true;
+	}
+
 	/** Update team season stats, player season stats, player and team picks
 	 *
 	 * Intended to run every day @ 2am
@@ -54,18 +73,6 @@ class Update {
 		await Player.updateSeasonStats();
 
 		console.log(`Finished updating player season stats @ ${moment().format('LLL')}!`);
-
-		console.log(`Updating player picks (${moment().format('LLL')}) ...`);
-
-		await Player.updatePicks();
-
-		console.log(`Finished updating player picks @ ${moment().format('LLL')}!`);
-
-		console.log(`Updating games (${moment().format('LLL')}) ...`);
-
-		await Team.updatePicks();
-
-		console.log(`Finished updating team picks @ ${moment().format('LLL')}!`);
 
 		return true;
 	}
