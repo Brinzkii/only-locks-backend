@@ -422,13 +422,14 @@ class User {
 				WHERE game_id = $1 AND player_id = $2`,
 					[pick.gameId, pick.playerId]
 				);
-
-				pick.points = liveStats.rows[0].points || 0;
-				pick.tpm = liveStats.rows[0].tpm || 0;
-				pick.rebounds = liveStats.rows[0].rebounds || 0;
-				pick.steals = liveStats.rows[0].steals || 0;
-				pick.blocks = liveStats.rows[0].blocks || 0;
-				pick.assists = liveStats.rows[0].assists || 0;
+				if (liveStats.rows.length) {
+					pick.points = liveStats.rows[0].points || 0;
+					pick.tpm = liveStats.rows[0].tpm || 0;
+					pick.rebounds = liveStats.rows[0].rebounds || 0;
+					pick.steals = liveStats.rows[0].steals || 0;
+					pick.blocks = liveStats.rows[0].blocks || 0;
+					pick.assists = liveStats.rows[0].assists || 0;
+				}
 			}
 		}
 
@@ -475,10 +476,14 @@ class User {
 				}
 
 				let leading = false;
+				let difference;
 				if (selectedScore > opponentScore) {
 					leading = true;
+					difference = Math.abs(selectedScore - opponentScore);
+				} else {
+					difference = Math.abs(selectedScore - opponentScore) * -1;
 				}
-
+				pick.difference = difference;
 				pick.isLeading = leading;
 			}
 		}
