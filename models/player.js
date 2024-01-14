@@ -954,13 +954,22 @@ class Player {
 			const result = resultRes.rows[0]
 			console.log(`RESULT:`, result)
 
-			if (!result) throw new NotFoundError(`No game stats exist for gameId: ${pick.gameId}`)
+			if (!result) {
+				console.log(
+					`No game stats exist for gameId: ${pick.gameId} and playerId: ${pick.playerId}`
+				);
+				continue;
+			}
+				
 
 			switch(pick.overUnder) {
 				case 'OVER':
 					if (result.amount > pick.value) {
 						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
-						await db.query('UPDATE users SET wins = wins + 1 WHERE username = $1', [pick.username])
+						await db.query('UPDATE users SET wins = wins + 1, points = points + $1 WHERE username = $2', [
+							pick.pointValue,
+							pick.username,
+						]);
 					} else {
 						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
 						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])
@@ -971,7 +980,10 @@ class Player {
 				case 'UNDER':
 					if (result.amount < pick.value) {
 						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
-						await db.query('UPDATE users SET wins = wins + 1 WHERE username = $1', [pick.username])
+						await db.query('UPDATE users SET wins = wins + 1, points = points + $1 WHERE username = $1', [
+							pick.pointValue,
+							pick.username,
+						]);
 					} else {
 						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
 						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])

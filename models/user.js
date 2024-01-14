@@ -79,7 +79,7 @@ class User {
 
 	static async checkValid(username) {
 		const userRes = await db.query(
-			`SELECT username, wins, losses, is_admin AS "isAdmin"
+			`SELECT username, wins, losses, points, is_admin AS "isAdmin"
             FROM users
             WHERE username = $1`,
 			[username]
@@ -402,7 +402,7 @@ class User {
 		await this.checkValid(username);
 		let picks = { playerPicks: [], teamPicks: [] };
 		const playerPicks = await db.query(
-			`SELECT pp.id AS "pickId", p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.id AS "gameId", g.location, g.score, g.clock, g.quarter, g.status
+			`SELECT pp.id AS "pickId", p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", t1.code || ' vs ' || t2.code AS game, g.date, pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.id AS "gameId", g.location, t1.code || ' ' || g.score || ' ' || t2.code AS score, g.clock, g.quarter, g.status
 		FROM player_picks pp
 		JOIN players p ON pp.player_id = p.id
 		JOIN games g ON pp.game_id = g.id
@@ -446,7 +446,7 @@ class User {
 		picks.playerPickRecord = `${playerWins.rows[0].wins} - ${playerLosses.rows[0].losses}`;
 
 		const teamPicks = await db.query(
-			`SELECT tp.id AS "pickId", t.name as selected, t.code AS "selectedCode", t.id AS "selectedId", t1.code || ' vs ' || t2.code AS game, g.id AS "gameId", g.location, g.date, tp.result, g.score, g.clock, g.quarter, g.winner, g.status
+			`SELECT tp.id AS "pickId", t.name as selected, tp.point_value AS "pointValue", t.code AS "selectedCode", t.id AS "selectedId", t1.code || ' vs ' || t2.code AS game, g.id AS "gameId", g.location, g.date, tp.result, g.score, t1.code || ' ' || g.score || ' ' || t2.code AS "displayScore", g.clock, g.quarter, g.winner, g.status
 		FROM team_picks tp
 		JOIN teams t ON tp.team_id = t.id
 		JOIN games g ON tp.game_id = g.id

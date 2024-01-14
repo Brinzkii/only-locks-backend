@@ -164,4 +164,20 @@ router.get('/h2h/:team1id/:team2id', authenticateJWT, ensureLoggedIn, async func
 	}
 });
 
+/** GET /[gameId]/picks => [ { pick }, ... ] 
+ * 
+ * 	Filters all picks by gameId and returns randomly ordered array
+ * 
+ * 	Authorization required: must be logged in
+ */
+
+router.get('/:gameId/picks', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const picks = await Game.picks(req.params.gameId);
+		return res.json({ picks });
+	} catch (err) {
+		return next(err);
+	}
+});
+
 module.exports = router;

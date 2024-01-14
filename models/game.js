@@ -599,6 +599,96 @@ class Game {
 		}
 		return response;
 	}
+
+	static async picks(gameId) {
+		const game = await this.checkValid(gameId);
+
+		const playerPicksRes = await db.query(
+			`
+		SELECT pp.id AS "pickId", pp.username, p.last_name || ', ' || p.first_name AS player, p.id AS "playerId", pp.stat, pp.over_under AS "overUnder", pp.value, pp.result, pp.point_value AS "pointValue", g.status
+		FROM player_picks pp
+		JOIN players p ON pp.player_id = p.id
+		JOIN games g ON pp.game_id = g.id
+		WHERE pp.game_id = $1`,
+			[game.id]
+		);
+		const playerPicks = playerPicksRes.rows;
+
+		for (let pick of playerPicks) {
+			if (pick.status === 'in play' || pick.status === 'finished') {
+				const liveStats = await db.query(
+					`
+				SELECT points, assists, tpm, def_reb + off_reb AS rebounds, steals, blocks
+				FROM game_stats
+				WHERE game_id = $1 AND player_id = $2`,
+					[pick.gameId, pick.playerId]
+				);
+				if (liveStats.rows.length) {
+					pick.points = liveStats.rows[0].points || 0;
+					pick.tpm = liveStats.rows[0].tpm || 0;
+					pick.rebounds = liveStats.rows[0].rebounds || 0;
+					pick.steals = liveStats.rows[0].steals || 0;
+					pick.blocks = liveStats.rows[0].blocks || 0;
+					pick.assists = liveStats.rows[0].assists || 0;
+				}
+			}
+		}
+
+		const teamPicksRes = await db.query(
+			`
+		SELECT tp.id AS "pickId", tp.username, t.name as selected, tp.point_value AS "pointValue", t.code AS "selectedCode", t.id AS "selectedId", t1.code || ' vs ' || t2.code AS game, tp.result, g.score, g.winner, g.status
+		FROM team_picks tp
+		JOIN teams t ON tp.team_id = t.id
+		JOIN games g ON tp.game_id = g.id
+		JOIN teams t1 ON g.home_team = t1.id
+		JOIN teams t2 ON g.away_team = t2.id
+		WHERE tp.game_id = $1`,
+			[game.id]
+		);
+		const teamPicks = teamPicksRes.rows;
+
+		for (let pick of teamPicks) {
+			if (pick.score !== 'TBD') {
+				let score = {};
+				let points = pick.score.split('-');
+				pick.game.split('vs').map((code, idx) => {
+					score[code.trim()] = Number(points[idx]);
+				});
+
+				let opponentScore;
+				let selectedScore;
+				if (Object.keys(score)[0] === pick.selectedCode) {
+					selectedScore = score[pick.selectedCode];
+					opponentScore = score[Object.keys(score)[1]];
+				} else {
+					selectedScore = score[pick.selectedCode];
+					opponentScore = score[Object.keys(score)[0]];
+				}
+
+				let leading = false;
+				let difference;
+				if (selectedScore > opponentScore) {
+					leading = true;
+					difference = Math.abs(selectedScore - opponentScore);
+				} else {
+					difference = Math.abs(selectedScore - opponentScore) * -1;
+				}
+				pick.difference = difference;
+				pick.isLeading = leading;
+			}
+		}
+		let picks = playerPicks.concat(teamPicks);
+
+		// shuffle picks so they're not stacked by type
+		for (let i = picks.length - 1; i > 0; i--) {
+			let j = Math.floor(Math.random() * (i + 1));
+			let temp = picks[i];
+			picks[i] = picks[j];
+			picks[j] = temp;
+		}
+
+		return picks;
+	}
 }
 
 module.exports = Game;

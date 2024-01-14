@@ -613,7 +613,10 @@ class Team {
 		for (let pick of picks) {
 			if (pick.winner === pick.teamId) {
 				await db.query(`UPDATE team_picks SET result=true WHERE id = $1`, [pick.id]);
-				await db.query(`UPDATE users SET wins = wins + 1 WHERE username = $1`, [pick.username]);
+				await db.query(`UPDATE users SET wins = wins + 1, points = points + $1 WHERE username = $2`, [
+					pick.pointValue,
+					pick.username,
+				]);
 			} else if (pick.winner !== pick.teamId) {
 				await db.query(`UPDATE team_picks SET result=false WHERE id = $1`, [pick.id]);
 				await db.query(`UPDATE users SET losses = losses + 1 WHERE username = $1`, [pick.username]);

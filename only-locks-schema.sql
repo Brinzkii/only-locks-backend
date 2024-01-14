@@ -3,6 +3,7 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     wins INTEGER DEFAULT 0,
     losses INTEGER DEFAULT 0,
+    points INTEGER DEFAULT 0,
     is_admin BOOLEAN DEFAULT false
 );
 
@@ -71,7 +72,7 @@ CREATE TABLE team_picks (
     game_id INTEGER
         REFERENCES games ON DELETE CASCADE,
     result BOOLEAN,
-    point_value INTEGER DEFAULT 0
+    point_value INTEGER DEFAULT 100
 );
 
 CREATE TABLE followed_teams (
