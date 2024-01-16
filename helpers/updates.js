@@ -56,12 +56,12 @@ class Update {
 		return true;
 	}
 
-	/** Update team season stats, player season stats, player and team picks
+	/** Update team season stats and player season stats
 	 *
-	 * Intended to run every day @ 2am
+	 * Intended to run every day @ 2:30am after games have finished
 	 **/
 
-	static async daily() {
+	static async dailyStats() {
 		console.log(`Updating team season stats (${moment().format('LLL')}) ...`);
 
 		await Team.updateSeasonStats();
@@ -74,7 +74,26 @@ class Update {
 
 		console.log(`Finished updating player season stats @ ${moment().format('LLL')}!`);
 
+		console.log(`Updating conference and division standings (${moment().format('LLL')}) ...`);
+
+		await Team.updateStandings();
+
+		console.log(`Finished updating conference and division standings @ ${moment().format('LLL')}!`);
+
 		return true;
+	}
+
+	/** Update player info for all players on each team
+	 *
+	 *  Intended to run every day at 8am to account for trades
+	 */
+
+	static async dailyPlayers() {
+		console.log(`Updating player info (${moment().format('LLL')}) ...`);
+
+		await Player.updateInfo();
+
+		console.log(`Finished updating player info @ ${moment().format('LLL')}!`);
 	}
 }
 

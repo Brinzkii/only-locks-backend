@@ -57,8 +57,8 @@ const hourlyUpdateJob = schedule.scheduleJob('0 0-2,20-23 * * *', async function
 	}
 })
 
-// Team season stats, player season stats, player and team picks will update once a day at 2 am
-const dailyUpdateJob = schedule.scheduleJob('0 2 * * *', async function (fireTime) {
+// Team season stats, player season stats and standings will update once a day at 2:30 am
+const dailyStatsUpdateJob = schedule.scheduleJob('30 2 * * *', async function (fireTime) {
 	try {
 		console.log(
 			`
@@ -66,7 +66,7 @@ const dailyUpdateJob = schedule.scheduleJob('0 2 * * *', async function (fireTim
 		`,
 			fireTime
 		);
-		const result = await update.daily();
+		const result = await update.dailyStats();
 		if (result)
 			console.log(`
 		***** DAILY UPDATES COMPLETED AT: ${moment().format('LTS')} *****
@@ -75,6 +75,26 @@ const dailyUpdateJob = schedule.scheduleJob('0 2 * * *', async function (fireTim
 		console.error(err);
 	}
 });
+
+// Player info will update once a day at 8am (this is mostly to account for trades)
+const dailyPlayerUpdateJob = schedule.scheduleJob('0 8 * * *', async function (fireTime) {
+	try {
+		console.log(
+			`
+		***** PLAYER UPDATES STARTED AT: ${fireTime} *****
+		`,
+			fireTime
+		);
+		const result = await update.dailyPlayers();
+		if (result)
+			console.log(`
+		***** PLAYER UPDATES COMPLETED AT: ${moment().format('LTS')} *****
+		`);
+	} catch (err) {
+		console.error(err);
+	}
+});
+
 
 
 app.use(cors());

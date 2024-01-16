@@ -267,9 +267,9 @@ class Player {
 	static async updateGameStats(gameId) {
 		if (!gameId) throw new BadRequestError('Must include a game ID to update player game stats!');
 
-		const game = await db.query('SELECT id FROM games WHERE id = $1', [gameId])
+		const game = await db.query('SELECT id FROM games WHERE id = $1', [gameId]);
 
-		if (!game.rows.length) throw new BadRequestError(`Invalid gameId: ${gameId}`)
+		if (!game.rows.length) throw new BadRequestError(`Invalid gameId: ${gameId}`);
 
 		const playersRes = await db.query(
 			`SELECT id, last_name || ', ' || first_name AS name FROM players WHERE team_id = $1 OR team_id = $2`,
@@ -932,71 +932,146 @@ class Player {
 		return playerStats;
 	}
 
-	/** Grabs all open player picks and updates them if game stats exist and 
-	 * 	the game is finished 
+	/** Grabs all open player picks and updates them if game stats exist and
+	 * 	the game is finished
 	 */
 
 	static async updatePicks() {
-		const picksRes = await db.query(`SELECT pp.id, pp.username, pp.player_id AS "playerId", pp.stat, pp.over_under AS "overUnder", pp.value, pp.game_id AS "gameId", pp.point_value AS "pointValue" 
+		const picksRes =
+			await db.query(`SELECT pp.id, pp.username, pp.player_id AS "playerId", pp.stat, pp.over_under AS "overUnder", pp.value, pp.game_id AS "gameId", pp.point_value AS "pointValue" 
 		FROM player_picks pp 
 		JOIN games g ON pp.game_id = g.id
 		WHERE result IS NULL
-		AND g.status = 'finished'`)
-		const picks = picksRes.rows
+		AND g.status = 'finished'`);
+		const picks = picksRes.rows;
 
-		console.log('PICKS:', picks)
+		console.log('PICKS:', picks);
 
-		if (!picks.length) return {updatePlayerPicks: 'No eligible player picks to update yet'}
+		if (!picks.length) return { updatePlayerPicks: 'No eligible player picks to update yet' };
 
 		for (let pick of picks) {
-			if (pick.stat === 'rebounds') pick.stat = 'off_reb + def_reb'
-			const resultRes = await db.query(`SELECT ${pick.stat} AS "amount" FROM game_stats WHERE player_id=$1 AND game_id=$2`, [pick.playerId, pick.gameId])
-			const result = resultRes.rows[0]
-			console.log(`RESULT:`, result)
+			if (pick.stat === 'rebounds') pick.stat = 'off_reb + def_reb';
+			const resultRes = await db.query(
+				`SELECT ${pick.stat} AS "amount" FROM game_stats WHERE player_id=$1 AND game_id=$2`,
+				[pick.playerId, pick.gameId]
+			);
+			const result = resultRes.rows[0];
+			console.log(`RESULT:`, result);
 
 			if (!result) {
-				console.log(
-					`No game stats exist for gameId: ${pick.gameId} and playerId: ${pick.playerId}`
-				);
+				console.log(`No game stats exist for gameId: ${pick.gameId} and playerId: ${pick.playerId}`);
 				continue;
 			}
-				
 
-			switch(pick.overUnder) {
+			switch (pick.overUnder) {
 				case 'OVER':
 					if (result.amount > pick.value) {
-						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
+						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id]);
 						await db.query('UPDATE users SET wins = wins + 1, points = points + $1 WHERE username = $2', [
 							pick.pointValue,
 							pick.username,
 						]);
 					} else {
-						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
-						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])
+						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id]);
+						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username]);
 					}
-					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`)
+					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`);
 					break;
 
 				case 'UNDER':
 					if (result.amount < pick.value) {
-						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id])
+						await db.query('UPDATE player_picks SET result=true WHERE id = $1', [pick.id]);
 						await db.query('UPDATE users SET wins = wins + 1, points = points + $1 WHERE username = $1', [
 							pick.pointValue,
 							pick.username,
 						]);
 					} else {
-						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id])
-						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username])
+						await db.query('UPDATE player_picks SET result=false WHERE id = $1', [pick.id]);
+						await db.query('UPDATE users SET losses = losses + 1 WHERE username = $1', [pick.username]);
 					}
-					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`)
+					console.log(`Pick ${pick.id} and User ${pick.username} successfully updated!`);
 					break;
 
 				default:
 					break;
 			}
 		}
-		console.log(`All eligible player picks update finished @ ${moment().format('LLL')}`)
-		return {updatePlayerPicks: "success"}
+		console.log(`All eligible player picks update finished @ ${moment().format('LLL')}`);
+		return { updatePlayerPicks: 'success' };
+	}
+
+	/** For each team get a list of players and update player info in database,
+	 *  adding if new players found
+	 *
+	 * 	Will run once a day to account for transactions
+	 */
+
+	static async updateInfo() {
+		const response = await db.query('SELECT id, name FROM teams');
+		const teams = response.rows;
+		for (let team of teams) {
+			let URL = BASE_URL + `players?team=${team.id}&season=2023`;
+			const response = await axios.get(URL, { headers });
+			let players = response.data.response;
+			for (let player of players) {
+				const checkDuplicate = await db.query(`SELECT id from players WHERE id = $1`, [player.id]);
+
+				let height;
+				let weight;
+
+				if (player.height.feets === null) {
+					height = 'Unknown';
+				} else if (player.height.feets && (player.height.inches === null || player.height.inces == 0)) {
+					height = player.height.feets + `'0"`;
+				} else {
+					height = player.height.feets + "'" + player.height.inches + '"';
+				}
+
+				if (player.weight.pounds === null) {
+					weight = 'Unknown';
+				} else {
+					weight = player.weight.pounds + ' lbs.';
+				}
+
+				if (!checkDuplicate.rows[0]) {
+					db.query(
+						'INSERT INTO players (id, first_name, last_name, birthday, height, weight, college, number, position, team_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+						[
+							player.id,
+							player.firstname,
+							player.lastname,
+							player.birth.date,
+							height,
+							weight,
+							player.college,
+							player.leagues.standard.jersey,
+							player.leagues.standard.pos,
+							team.id,
+						]
+					);
+					console.log(`---------- Added ${player.lastname}, ${player.firstname} ----------`);
+				} else {
+					db.query(
+						'UPDATE players SET first_name=$2, last_name=$3, birthday=$4, height=$5, weight=$6, college=$7, number=$8, position=$9, team_id=$10 WHERE id = $1',
+						[
+							player.id,
+							player.firstname,
+							player.lastname,
+							player.birth.date,
+							height,
+							weight,
+							player.college,
+							player.leagues.standard.jersey,
+							player.leagues.standard.pos,
+							team.id,
+						]
+					);
+					console.log(`---------- Updated ${player.lastname}, ${player.firstname} ----------`);
+				}
+			}
+			console.log(`All players added/updated for ${team.name}`);
+		}
+		return { updatePlayers: 'success' };
 	}
 }
 

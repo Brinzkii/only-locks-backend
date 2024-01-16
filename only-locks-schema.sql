@@ -18,6 +18,23 @@ CREATE TABLE teams (
     division TEXT NOT NULL
 );
 
+CREATE TABLE conference_standings (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER
+        REFERENCES teams ON DELETE CASCADE,
+    conference TEXT NOT NULL,
+    rank INTEGER NOT NULL
+);
+
+CREATE TABLE division_standings (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER
+        REFERENCES teams ON DELETE CASCADE,
+    division TEXT NOT NULL,
+    rank INTEGER NOT NULL,
+    games_behind REAL NOT NULL
+);
+
 CREATE TABLE players (
     id INTEGER PRIMARY KEY,
     first_name TEXT NOT NULL,

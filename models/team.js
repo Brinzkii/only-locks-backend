@@ -33,16 +33,19 @@ class Team {
 
 	/** Given a teamId, return data about that team.
 	 *
-	 *  Returns { id, code, nickname, name, city, logo, conference, division }
+	 *  Returns { id, code, nickname, name, city, logo, conference,
+	 *  conference_rank, division, division_rank }
 	 *
 	 * Throws NotFoundError if not found.
 	 **/
 
 	static async get(id) {
 		const teamRes = await db.query(
-			`SELECT id, code, nickname, name, city, logo, conference, division
-            FROM teams
-            WHERE id = $1`,
+			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, cs.rank AS "conferenceRank", t.division, ds.rank AS "divisionRank"
+            FROM teams t
+			JOIN conference_standings cs ON t.id = cs.team_id
+			JOIN division_standings ds ON t.id = ds.team_id
+            WHERE t.id = $1`,
 			[id]
 		);
 
@@ -60,11 +63,40 @@ class Team {
 
 	static async getAll() {
 		const teamsRes = await db.query(
-			`SELECT id, code, nickname, name, city, logo, conference, division
-			FROM teams`
+			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, cs.rank AS "conferenceRank", t.division, ds.rank AS "divisionRank"
+            FROM teams t
+			JOIN conference_standings cs ON t.id = cs.team_id
+			JOIN division_standings ds ON t.id = ds.team_id`
 		);
 
 		return teamsRes.rows;
+	}
+
+	/** Get Ordered standings for conferences
+	 *
+	 * 	returns { east: [], west: [] }
+	 */
+
+	static async getStandings() {
+		const eastStandings = await db.query(`
+		SELECT t.id, t.name, t.code, cs.rank, ts.wins || ' - ' || ts.losses AS record
+		FROM conference_standings cs
+		JOIN teams t ON cs.team_id = t.id
+		JOIN team_stats ts ON cs.team_id = ts.team_id
+		WHERE cs.conference='east'
+		ORDER BY cs.rank`);
+		const east = eastStandings.rows;
+
+		const westStandings = await db.query(`
+		SELECT t.id, t.name, t.code, cs.rank, ts.wins || ' - ' || ts.losses AS record
+		FROM conference_standings cs
+		JOIN teams t ON cs.team_id = t.id
+		JOIN team_stats ts ON cs.team_id = ts.team_id
+		WHERE cs.conference='west'
+		ORDER BY cs.rank`);
+		const west = westStandings.rows;
+
+		return { east, west };
 	}
 
 	/** Given a teamId, return all players on team
@@ -626,6 +658,32 @@ class Team {
 		}
 		console.log(`All eligible team picks update finished @ ${moment().format('LLL')}`);
 		return { updateTeamPicks: 'success' };
+	}
+
+	/** Update team standings for conferences and divisions  */
+
+	static async updateStandings() {
+		let URL = BASE_URL + `standings?league=standard&season=2023`;
+		const response = await axios.get(URL, { headers });
+		const teams = response.data.response;
+
+		for (let team of teams) {
+			db.query(
+				`
+			UPDATE conference_standings SET rank=$3 WHERE team_id=$1 AND conference=$2`,
+				[team.team.id, team.conference.name, team.conference.rank]
+			);
+
+			db.query(
+				`
+			UPDATE division_standings SET rank=$3, games_behind=$4 WHERE team_id=$1 AND division=$2`,
+				[team.team.id, team.division.name, team.division.rank, team.division.gamesBehind || 0]
+			);
+
+			console.log(`Updated rankings for ${team.team.name}!`);
+		}
+		console.log(`Standings update finished @ ${moment().format('LLL')}`);
+		return { updateStandings: 'success' };
 	}
 }
 module.exports = Team;

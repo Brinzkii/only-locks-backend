@@ -38,6 +38,30 @@ async function getTeams() {
 	}
 }
 
+async function getStandings() {
+	try {
+		let URL = BASE_URL + `standings?league=standard&season=2023`;
+		const response = await axios.get(URL, { headers });
+		const teams = response.data.response;
+
+		for (let team of teams) {
+			db.query(
+				`
+			INSERT INTO conference_standings (team_id, conference, rank) VALUES ($1, $2, $3)`,
+				[team.team.id, team.conference.name, team.conference.rank]
+			);
+
+			db.query(
+				`
+			INSERT INTO division_standings (team_id, division, rank, games_behind) VALUES ($1, $2, $3, $4)`,
+				[team.team.id, team.division.name, team.division.rank, team.division.gamesBehind || 0]
+			);
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}
+
 async function getPlayers() {
 	try {
 		const response = await db.query('SELECT id FROM teams');
@@ -359,6 +383,8 @@ async function seed() {
 
 	// await delay(30000);
 
+	await getStandings();
+
 	// await getPlayers();
 
 	// console.log('All players added!');
@@ -371,9 +397,9 @@ async function seed() {
 
 	// await delay(30000);
 
-	await getPlayerGameStats();
+	// await getPlayerGameStats();
 
-	console.log('All game stats added!');
+	// console.log('All game stats added!');
 
 	// await delay(30000);
 
@@ -389,10 +415,10 @@ async function seed() {
 
 	// await delay(30000);
 
-	await getTeamGameStats();
+	// await getTeamGameStats();
 
-	console.log('Game stats added for all teams!');
-	return;
+	// console.log('Game stats added for all teams!');
+	// return;
 }
 
 seed();

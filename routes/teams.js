@@ -26,10 +26,27 @@ router.get('/', authenticateJWT, ensureLoggedIn, async function (req, res, next)
 	}
 });
 
+/** GET /standings
+ * 
+ * 	Returns { east: [ { team }, ... ], west: [ { team }, ... ] }
+ * 
+ * Authorization required: must be logged in
+ **/
+
+router.get('/standings', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
+	try {
+		const standings = await Team.getStandings()
+		return res.json({standings})
+	} catch(err) {
+		return next(err)
+	}
+})
+
 /** GET /stats
  * 
  * 	Returns [ { teamStats } ]
  * 
+ *  Authorization required: must be logged in
  **/
 
 router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
