@@ -602,6 +602,7 @@ class Game {
 
 	static async picks(gameId) {
 		const game = await this.checkValid(gameId);
+		let communityRecord = { wins: 0, losses: 0 };
 
 		const playerPicksRes = await db.query(
 			`
@@ -615,6 +616,11 @@ class Game {
 		const playerPicks = playerPicksRes.rows;
 
 		for (let pick of playerPicks) {
+			if (pick.result === true) {
+				communityRecord.wins++;
+			} else if (pick.result === false) {
+				communityRecord.losses++;
+			}
 			if (pick.status === 'in play' || pick.status === 'finished') {
 				const liveStats = await db.query(
 					`
@@ -648,6 +654,11 @@ class Game {
 		const teamPicks = teamPicksRes.rows;
 
 		for (let pick of teamPicks) {
+			if (pick.result === true) {
+				communityRecord.wins++;
+			} else if (pick.result === false) {
+				communityRecord.losses++;
+			}
 			if (pick.score !== 'TBD') {
 				let score = {};
 				let points = pick.score.split('-');
@@ -687,7 +698,7 @@ class Game {
 			picks[j] = temp;
 		}
 
-		return picks;
+		return { communityRecord, picks };
 	}
 }
 
