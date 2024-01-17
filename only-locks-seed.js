@@ -175,7 +175,7 @@ async function getPlayerGameStats() {
 				const validGame = await db.query('SELECT id FROM games WHERE id = $1', [ps.game.id]);
 				if (validGame.rows.length) {
 					db.query(
-						'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+						'INSERT INTO game_stats (player_id, game_id, minutes, points, fgm, fga, fgp, ftm, fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, steals, turnovers, blocks, plus_minus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
 						[
 							ps.player.id,
 							ps.game.id,
@@ -192,6 +192,7 @@ async function getPlayerGameStats() {
 							+ps.tpp || 0,
 							ps.offReb || 0,
 							ps.defReb || 0,
+							ps.offReb + ps.defReb || 0,
 							ps.assists || 0,
 							ps.pFouls || 0,
 							ps.steals || 0,
