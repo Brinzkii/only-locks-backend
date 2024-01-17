@@ -1,5 +1,5 @@
 'use strict';
-/** Database setup for jobly. */
+/** Database setup for Only Locks */
 const { Client } = require('pg');
 const dotenv = require('dotenv');
 const { getDatabaseUri } = require('./config');
