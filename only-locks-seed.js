@@ -128,7 +128,7 @@ async function getGames() {
 				if (game.scores.home.points > game.scores.visitors.points && game.status.short === 3) {
 					winner = game.teams.home.id;
 				} else if (game.scores.home.points < game.scores.visitors.points && game.status.short === 3) {
-					winner = game.teams.away.id;
+					winner = game.teams.visitors.id;
 				}
 			}
 
@@ -167,7 +167,6 @@ async function getPlayerGameStats() {
 		let players = response.rows;
 		// Request each players stats - this returns all games and their stats for the season
 		for (let player of players) {
-			await delay(250);
 			let URL = BASE_URL + `players/statistics?id=${player.id}&season=2023`;
 			const response = await axios.get(URL, { headers });
 			let playerStats = response.data.response;
@@ -377,19 +376,21 @@ async function populateSeasonStats() {
 }
 
 async function seed() {
-	await getTeams();
+	// await getTeams();
 
-	console.log('All teams added!');
+	// console.log('All teams added!');
 
-	await delay(30000);
+	// await delay(30000);
 
-	await getStandings();
+	// await getStandings();
 
-	await getPlayers();
+	// console.log('Standings added!')
 
-	console.log('All players added!');
+	// await getPlayers();
 
-	await delay(30000);
+	// console.log('All players added!');
+
+	// await delay(30000);
 
 	await getGames();
 
