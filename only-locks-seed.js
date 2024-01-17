@@ -137,7 +137,7 @@ async function getGames() {
 			let date = moment(game.date.start);
 			if (date >= seasonStart) {
 				db.query(
-					'INSERT INTO games (id, date, location, home_team, away_team, status, clock, score, winner) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+					`INSERT INTO games (id, date, location, home_team, away_team, status, clock, score, winner) VALUES ($1, (SELECT '$2' AT TIME ZONE 'UTC'), $3, $4, $5, $6, $7, $8, $9)`,
 					[
 						game.id,
 						game.date.start,
@@ -377,33 +377,33 @@ async function populateSeasonStats() {
 }
 
 async function seed() {
-	// await getTeams();
+	await getTeams();
 
-	// console.log('All teams added!');
+	console.log('All teams added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getStandings();
+	await getStandings();
 
-	// console.log('Standings added!')
+	console.log('Standings added!');
 
-	// await getPlayers();
+	await getPlayers();
 
-	// console.log('All players added!');
+	console.log('All players added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getGames();
+	await getGames();
 
-	// console.log('All games added!');
+	console.log('All games added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getPlayerGameStats();
+	await getPlayerGameStats();
 
-	// console.log('All game stats added!');
+	console.log('All game stats added!');
 
-	// await delay(30000);
+	await delay(30000);
 
 	await getTeamStats();
 
