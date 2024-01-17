@@ -377,48 +377,48 @@ async function populateSeasonStats() {
 }
 
 async function seed() {
-	// await getTeams();
+	await getTeams();
 
-	// console.log('All teams added!');
+	console.log('All teams added!');
 
-	// await delay(30000);
+	await delay(30000);
 
 	await getStandings();
 
-	// await getPlayers();
+	await getPlayers();
 
-	// console.log('All players added!');
+	console.log('All players added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getGames();
+	await getGames();
 
-	// console.log('All games added!');
+	console.log('All games added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getPlayerGameStats();
+	await getPlayerGameStats();
 
-	// console.log('All game stats added!');
+	console.log('All game stats added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getTeamStats();
+	await getTeamStats();
 
-	// console.log('All team stats added!');
+	console.log('All team stats added!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await populateSeasonStats();
+	await populateSeasonStats();
 
-	// console.log('All player season stats populated!');
+	console.log('All player season stats populated!');
 
-	// await delay(30000);
+	await delay(30000);
 
-	// await getTeamGameStats();
+	await getTeamGameStats();
 
-	// console.log('Game stats added for all teams!');
-	// return;
+	console.log('Game stats added for all teams!');
+	return;
 }
 
 seed();
