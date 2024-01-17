@@ -3,7 +3,7 @@
 /** Routes for updating database. */
 
 const express = require('express');
-const { authenticateUpdateRequest } = require('../middleware/auth');
+const { ensureAdmin } = require('../middleware/auth');
 const Game = require('../models/game');
 const Player = require('../models/player');
 const Team = require('../models/team');
@@ -17,7 +17,7 @@ const router = express.Router();
  * Authorization required: special update request
  **/
 
-router.patch('/games/all', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/games/all', ensureAdmin, async function (req, res, next) {
 	try {
 		await Game.updateAll();
 		return res.json({ updateAllGames: 'success' });
@@ -33,7 +33,7 @@ router.patch('/games/all', authenticateUpdateRequest, async function (req, res, 
  * Authorization required: special update request
  */
 
-router.patch('/games/recent', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/games/recent', ensureAdmin, async function (req, res, next) {
 	try {
 		await Game.updateRecent();
 		return res.json({ updateRecentGames: 'success' });
@@ -49,7 +49,7 @@ router.patch('/games/recent', authenticateUpdateRequest, async function (req, re
  * 	Authorization required: special update request
  **/
 
-router.patch('/players/season', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/players/season', ensureAdmin, async function (req, res, next) {
 	try {
 		await Player.updateSeasonStats();
 		return res.json({ updatePlayerSeasonStats: 'success' });
@@ -67,7 +67,7 @@ router.patch('/players/season', authenticateUpdateRequest, async function (req, 
  * 	Authorization required: special update request
  **/
 
-router.patch('/players/games', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/players/games', ensureAdmin, async function (req, res, next) {
 	try {
 		const { method } = req.body;
 		await Player.adminUpdateGameStats(method);
@@ -89,7 +89,7 @@ router.patch('/players/games', authenticateUpdateRequest, async function (req, r
  * 	Authorization required: special update request
  **/
 
-router.patch('/players/game/:gameId', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/players/game/:gameId', ensureAdmin, async function (req, res, next) {
 	try {
 		const { gameId } = req.params;
 		const { players, game } = await Player.updateGameStats(gameId);
@@ -111,7 +111,7 @@ router.patch('/players/game/:gameId', authenticateUpdateRequest, async function 
  * 	Authorization required: special update request
  **/
 
-router.patch('/teams/season', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/teams/season', ensureAdmin, async function (req, res, next) {
 	try {
 		await Team.updateSeasonStats();
 		return res.json({ updateTeamStats: 'success' });
@@ -129,7 +129,7 @@ router.patch('/teams/season', authenticateUpdateRequest, async function (req, re
  * 	Authorization required: special update request
  **/
 
-router.patch('/teams/games', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/teams/games', ensureAdmin, async function (req, res, next) {
 	try {
 		const { method } = req.body;
 		await Team.updateGameStats(method);
@@ -146,7 +146,7 @@ router.patch('/teams/games', authenticateUpdateRequest, async function (req, res
  * 	Authorization required: authenitcated update request
  */
 
-router.patch('/picks/players', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/picks/players', ensureAdmin, async function (req, res, next) {
 	try {
 		const updatePlayerPicks = await Player.updatePicks();
 		return res.json(updatePlayerPicks);
@@ -162,7 +162,7 @@ router.patch('/picks/players', authenticateUpdateRequest, async function (req, r
  * 	Authorization required: authenitcated update request
  */
 
-router.patch('/picks/teams', authenticateUpdateRequest, async function (req, res, next) {
+router.patch('/picks/teams', ensureAdmin, async function (req, res, next) {
 	try {
 		const updateTeamPicks = await Team.updatePicks();
 		return res.json(updateTeamPicks);

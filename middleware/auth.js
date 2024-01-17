@@ -74,28 +74,9 @@ function ensureCorrectUser(req, res, next) {
 	}
 }
 
-/** Middleware to use when request must come from React App with special 
- * authorization header.
- *
- *  If not, raises Unauthorized.
- */
-
-function authenticateUpdateRequest(req, res, next) {
-	try {
-		const authHeader = req.headers && req.headers.authorization;
-		if (authHeader !== 'SPECIAL UPDATE REQUEST') {
-			throw new UnauthorizedError()
-		} 
-		return next();
-	} catch (err) {
-		return next(err);
-	}
-}
-
 module.exports = {
 	authenticateJWT,
 	ensureLoggedIn,
 	ensureAdmin,
 	ensureCorrectUser,
-	authenticateUpdateRequest,
 };
