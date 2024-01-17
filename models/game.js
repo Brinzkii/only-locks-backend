@@ -332,9 +332,9 @@ class Game {
 				JOIN teams t2 ON g.away_team = t2.id
 				JOIN team_stats ts1 ON t1.id = ts1.team_id
 				JOIN team_stats ts2 ON t2.id = ts2.team_id
-				WHERE g.home_team = $1
-				OR g.away_team = $1
-				AND g.date = $2
+				WHERE (g.home_team = $1
+				OR g.away_team = $1)
+				AND DATE(g.date) = $2
 				ORDER BY g.date ASC`,
 				[teamId, date]
 			);
