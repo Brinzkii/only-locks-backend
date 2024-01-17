@@ -392,11 +392,11 @@ async function seed() {
 
 	// await delay(30000);
 
-	await getGames();
+	// await getGames();
 
-	console.log('All games added!');
+	// console.log('All games added!');
 
-	await delay(30000);
+	// await delay(30000);
 
 	await getPlayerGameStats();
 
