@@ -334,7 +334,7 @@ class Game {
 				JOIN team_stats ts2 ON t2.id = ts2.team_id
 				WHERE (g.home_team = $1
 				OR g.away_team = $1)
-				AND DATE(g.date) = $2
+				AND DATE(g.date AT TIME ZONE 'America/New_York') = $2
 				ORDER BY g.date ASC`,
 				[teamId, date]
 			);
@@ -359,7 +359,7 @@ class Game {
 				JOIN teams t2 ON g.away_team = t2.id
 				JOIN team_stats ts1 ON t1.id = ts1.team_id
 				JOIN team_stats ts2 ON t2.id = ts2.team_id
-				WHERE DATE(g.date) = $1
+				WHERE DATE(g.date AT TIME ZONE 'America/New_York') = $1
 				ORDER BY g.date ASC`,
 				[date]
 			);
@@ -423,12 +423,12 @@ class Game {
 	/** Update yesterday and today's games */
 
 	static async updateRecent() {
-		let currDay = Moment().format('l').replaceAll('/', '-');
-		let prevDay = Moment(currDay).subtract(1, 'days').format('l').replaceAll('/', '-');
-		const gamesRes = await db.query('SELECT id FROM games WHERE DATE(date) >= $1 AND DATE(date) <= $2', [
-			prevDay,
-			currDay,
-		]);
+		let currDay = Moment().format('YYYYMMDD');
+		let prevDay = Moment().subtract(1, 'days').format('YYYYMMDD');
+		const gamesRes = await db.query(
+			'SELECT id FROM games WHERE DATE(date AT TIME ZONE America/New_York) >= $1 AND DATE(date AT TIME ZONE America/New_York) <= $2',
+			[prevDay, currDay]
+		);
 		const games = gamesRes.rows;
 		for (let game of games) {
 			let URL = BASE_URL + `games?id=${game.id}`;

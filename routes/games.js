@@ -3,7 +3,7 @@
 /** Routes for teams. */
 
 const express = require('express');
-const { authenticateJWT, ensureLoggedIn, ensureAdmin } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
 const Game = require('../models/game');
 
 const router = express.Router();
@@ -46,52 +46,52 @@ router.get('/:gameId', authenticateJWT, ensureLoggedIn, async function (req, res
 	}
 });
 
-/** GET /[gameId]/stats => { teamStats } 
- * 
+/** GET /[gameId]/stats => { teamStats }
+ *
  * 	Returns { gameId, score, home, away }
- * 		Where home and away are { id, name, fast_break_points, points_in_paint, 
- * 		second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm, 
- * 		fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls, 
+ * 		Where home and away are { id, name, fast_break_points, points_in_paint,
+ * 		second_chance_points, points_off_turnovers, points, fgm, fga, fgp, ftm,
+ * 		fta, ftp, tpm, tpa, tpp, off_reb, def_reb, total_reb, assists, fouls,
  * 		steals, turnovers, blocks, plus_minus }
- * 
+ *
  * 	Authorization required: must be logged in
  **/
 
 router.get('/:gameId/stats', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const gameId = req.params.gameId
-		const gameStats = await Game.getStats(gameId)
-		return res.json({gameStats})
+		const gameId = req.params.gameId;
+		const gameStats = await Game.getStats(gameId);
+		return res.json({ gameStats });
 	} catch (err) {
-		return next(err)
+		return next(err);
 	}
-})
+});
 
-/** GET /[gameId]/top => { topPerformers } 
- * 
+/** GET /[gameId]/top => { topPerformers }
+ *
  * 	Returns { game, home, away }
-	 * 		Where home and away are { points: { id, name, value }, rebounds:
-	 * 				                  { id, name, value }, assists: { id, name,
-	 * 								  value }, blocks: { id, name, value },
-	 * 								  steals: { id, name, value }, plusMinus:
-	 * 								  { id, name, value } }
- * 
+ * 		Where home and away are { points: { id, name, value }, rebounds:
+ * 				                  { id, name, value }, assists: { id, name,
+ * 								  value }, blocks: { id, name, value },
+ * 								  steals: { id, name, value }, plusMinus:
+ * 								  { id, name, value } }
+ *
  *  Authorization required: must be logged in
  */
 
 router.get('/:gameId/top', authenticateJWT, ensureLoggedIn, async function (req, res, next) {
 	try {
-		const gameId = req.params.gameId
-		const topPerformers = await Game.getTopPerformers(gameId)
-		return res.json({topPerformers})
-	} catch(err) {
-		return next(err)
+		const gameId = req.params.gameId;
+		const topPerformers = await Game.getTopPerformers(gameId);
+		return res.json({ topPerformers });
+	} catch (err) {
+		return next(err);
 	}
-})
+});
 
 /** GET /filter/date/[date]=> { games }
  *
- *  Can pass in a date string "DD-MM-YYYY", "today", "tomorrow", "yesterday"
+ *  Can pass in a date string "YYYYMMDD", "today", "tomorrow", "yesterday"
  *
  *  Returns [ {game }, { game }, ...]
  *
@@ -106,18 +106,13 @@ router.get('/filter/date/:date', authenticateJWT, ensureLoggedIn, async function
 	try {
 		const date = req.params.date;
 		if (date === 'today' || date === 'yesterday' || date === 'tomorrow') {
-			let d = new Date();
 			let day;
 			if (date === 'today') {
-				day = d.toISOString().slice(0, 10);
+				day = moment().format('YYYYMMDD');
 			} else if (date === 'yesterday') {
-				day = d.getDate() - 1;
-				d.setDate(day);
-				day = d.toISOString().slice(0, 10);
+				day = moment().subtract(1, 'days').format('YYYYMMDD');
 			} else {
-				day = d.getDate() + 1;
-				d.setDate(day);
-				day = d.toISOString().slice(0, 10);
+				day = moment().add(1, 'days').format('YYYYMMDD');
 			}
 
 			const games = await Game.filter(null, day);
