@@ -426,7 +426,7 @@ class Game {
 		let currDay = Moment().format('YYYYMMDD');
 		let prevDay = Moment().subtract(1, 'days').format('YYYYMMDD');
 		const gamesRes = await db.query(
-			'SELECT id FROM games WHERE DATE(date AT TIME ZONE America/New_York) >= $1 AND DATE(date AT TIME ZONE America/New_York) <= $2',
+			`SELECT id FROM games WHERE DATE(date AT TIME ZONE 'America/New_York') >= $1 AND DATE(date AT TIME ZONE 'America/New_York') <= $2`,
 			[prevDay, currDay]
 		);
 		const games = gamesRes.rows;
