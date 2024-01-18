@@ -25,7 +25,7 @@ const app = express();
 // Schedule updates to run
 
 // Game details (score, clock, quarter), player game stats and teamstats will update every 15 minutes starting at 7pm each day and ending at 2 am
-const frequentUpdateJob = schedule.scheduleJob('0,15,30,45 0-1,19-23 * * *', async function (fireTime) {
+const frequentUpdateJob = schedule.scheduleJob('0,15,30,45 0-6 * * *', async function (fireTime) {
 	try {
 		console.log(`
 		***** REGULAR UPDATES STARTED AT: ${fireTime} *****
@@ -41,24 +41,24 @@ const frequentUpdateJob = schedule.scheduleJob('0,15,30,45 0-1,19-23 * * *', asy
 });
 
 // PLayer and team picks will update every hour to determine win/loss and update users win/loss total
-const hourlyUpdateJob = schedule.scheduleJob('0 0-2,20-23 * * *', async function (fireTime) {
+const hourlyUpdateJob = schedule.scheduleJob('0 0-6 * * *', async function (fireTime) {
 	try {
 		console.log(`
 		***** HOURLY UPDATES STARTED AT: ${fireTime} *****
-		`)
-		const result = await update.hourly()
-		if (result){
+		`);
+		const result = await update.hourly();
+		if (result) {
 			console.log(`
 		***** HOURLY UPDATES COMPLETED AT: ${moment().format('LTS')}*****
 		`);
 		}
 	} catch (err) {
-		console.error(err)
+		console.error(err);
 	}
-})
+});
 
 // Team season stats, player season stats and standings will update once a day at 2:30 am
-const dailyStatsUpdateJob = schedule.scheduleJob('30 2 * * *', async function (fireTime) {
+const dailyStatsUpdateJob = schedule.scheduleJob('30 7 * * *', async function (fireTime) {
 	try {
 		console.log(
 			`
@@ -77,7 +77,7 @@ const dailyStatsUpdateJob = schedule.scheduleJob('30 2 * * *', async function (f
 });
 
 // Player info will update once a day at 8am (this is mostly to account for trades)
-const dailyPlayerUpdateJob = schedule.scheduleJob('0 8 * * *', async function (fireTime) {
+const dailyPlayerUpdateJob = schedule.scheduleJob('0 13 * * *', async function (fireTime) {
 	try {
 		console.log(
 			`
