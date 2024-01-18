@@ -621,7 +621,7 @@ class Game {
 			} else if (pick.result === false) {
 				communityRecord.losses++;
 			}
-			if (pick.status === 'in play' || pick.status === 'finished') {
+			if (pick.status !== 'scheduled') {
 				const liveStats = await db.query(
 					`
 				SELECT points, assists, tpm, def_reb + off_reb AS rebounds, steals, blocks
@@ -629,7 +629,7 @@ class Game {
 				WHERE game_id = $1 AND player_id = $2`,
 					[pick.gameId, pick.playerId]
 				);
-				if (liveStats.rows.length) {
+				if (liveStats.rows.length > 0) {
 					pick.points = liveStats.rows[0].points || 0;
 					pick.tpm = liveStats.rows[0].tpm || 0;
 					pick.rebounds = liveStats.rows[0].rebounds || 0;
