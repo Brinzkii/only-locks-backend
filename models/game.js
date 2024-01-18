@@ -616,7 +616,7 @@ class Game {
 		const playerPicks = playerPicksRes.rows;
 
 		for (let pick of playerPicks) {
-			console.log('PICK STATUS FINISHED:', pick.status === 'scheduled');
+			console.log('PICK STATUS FINISHED:', pick.status == 'scheduled');
 			if (pick.status !== 'scheduled') {
 				const liveStats = await db.query(
 					`
@@ -625,6 +625,7 @@ class Game {
 				WHERE game_id = $1 AND player_id = $2`,
 					[pick.gameId, pick.playerId]
 				);
+				console.log('LIVESTATS:', liveStats);
 				if (liveStats.rows.length > 0) {
 					pick.points = liveStats.rows[0].points || 0;
 					pick.tpm = liveStats.rows[0].tpm || 0;
