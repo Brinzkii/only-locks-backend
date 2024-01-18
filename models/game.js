@@ -616,6 +616,7 @@ class Game {
 		const playerPicks = playerPicksRes.rows;
 
 		for (let pick of playerPicks) {
+			console.log('PICK:', pick);
 			if (pick.result === true) {
 				communityRecord.wins++;
 			} else if (pick.result === false) {
