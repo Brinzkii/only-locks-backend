@@ -401,7 +401,7 @@ class Game {
 
 			db.query(
 				`UPDATE games 
-					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date = (SELECT '$6' AT TIME ZONE 'UTC')
+					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date = (SELECT $6 AT TIME ZONE 'UTC')
 					WHERE id=$7`,
 				[
 					updatedGame.status.long.toLowerCase(),
@@ -455,7 +455,7 @@ class Game {
 
 			db.query(
 				`UPDATE games 
-					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date= (SELECT '$6' AT TIME ZONE 'UTC')
+					SET status=$1, clock=$2, quarter=$3, score=$4, winner=$5, date = (SELECT $6 AT TIME ZONE 'UTC')
 					WHERE id=$7`,
 				[
 					updatedGame.status.long.toLowerCase(),
