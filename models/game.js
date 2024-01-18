@@ -616,8 +616,7 @@ class Game {
 		const playerPicks = playerPicksRes.rows;
 
 		for (let pick of playerPicks) {
-			if (pick.result === true) communityRecord.wins++;
-			if (pick.result === false) communityRecord.losses++;
+			console.log('PICK STATUS FINISHED:', pick.status === 'scheduled');
 			if (pick.status !== 'scheduled') {
 				const liveStats = await db.query(
 					`
@@ -635,6 +634,8 @@ class Game {
 					pick.assists = liveStats.rows[0].assists || 0;
 				}
 			}
+			if (pick.result === true) communityRecord.wins++;
+			if (pick.result === false) communityRecord.losses++;
 		}
 
 		const teamPicksRes = await db.query(
