@@ -616,12 +616,8 @@ class Game {
 		const playerPicks = playerPicksRes.rows;
 
 		for (let pick of playerPicks) {
-			console.log('PICK:', pick);
-			if (pick.result === true) {
-				communityRecord.wins++;
-			} else if (pick.result === false) {
-				communityRecord.losses++;
-			}
+			if (pick.result === true) communityRecord.wins++;
+			if (pick.result === false) communityRecord.losses++;
 			if (pick.status !== 'scheduled') {
 				const liveStats = await db.query(
 					`
