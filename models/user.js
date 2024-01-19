@@ -109,10 +109,12 @@ class User {
 		const user = await this.checkValid(username);
 
 		const userFavTeams = await db.query(
-			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, t.division, ts.wins, ts.losses 
+			`SELECT t.id, t.code, t.nickname, t.name, t.city, t.logo, t.conference, t.division, ts.wins, ts.losses, cs.rank AS "conferenceRank", ds.rank AS "divisionRank"
             FROM followed_teams ft
 			JOIN teams t ON ft.team_id = t.id
 			JOIN team_stats ts ON ft.team_id = ts.id
+			JOIN conference_standings cs ON ft.team_id = cs.team_id
+			JOIN division_standings ds ON ft.team_id = ds.team_id
             WHERE username = $1`,
 			[username]
 		);
