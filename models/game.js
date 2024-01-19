@@ -413,7 +413,11 @@ class Game {
 					game.id,
 				]
 			);
-			console.log(`Game(${game.id}) - ${Moment(updatedGame.date.start).format('LLL')} has been updated!`);
+			console.log(
+				`Game(${game.id}) - ${Moment(updatedGame.date.start)
+					.subtract(5, 'hours')
+					.format('LLL')} has been updated!`
+			);
 			await delay(250);
 		}
 		console.log('All games have been updated!');
@@ -468,7 +472,11 @@ class Game {
 				]
 			);
 
-			console.log(`Game(${game.id}) - ${Moment(updatedGame.date.start).format('LLL')} has been updated!`);
+			console.log(
+				`Game(${game.id}) - ${Moment(updatedGame.date.start)
+					.subtract(5, 'hours')
+					.format('LLL')} has been updated!`
+			);
 		}
 		console.log('All games have been updated!');
 		return;
@@ -556,12 +564,8 @@ class Game {
 			gameStats: [],
 		};
 
-		console.log(`${t1.code} WINS:`, response.totals[t1.code].wins);
-		console.log(`${t2.code} WINS:`, response.totals[t2.code].wins);
-
 		for (let game of games) {
 			let stats = await this.getStats(game.id);
-			console.log('Stats:', stats);
 			if (Object.keys(stats).length > 0) {
 				response.gameStats.push(stats);
 				if (stats.home.id === t1.id) {

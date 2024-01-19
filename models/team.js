@@ -638,8 +638,6 @@ class Team {
 		AND g.status = 'finished'`);
 		const picks = picksRes.rows;
 
-		console.log('PICKS:', picks);
-
 		if (!picks.length) return { updateTeamPicks: 'No eligible team picks to update yet' };
 
 		for (let pick of picks) {
@@ -656,7 +654,7 @@ class Team {
 
 			console.log(`Team pick ${pick.id} and User ${pick.username} updated!`);
 		}
-		console.log(`All eligible team picks update finished @ ${moment().format('LLL')}`);
+		console.log(`All eligible team picks update finished @ ${moment().subtract(5, 'hours').format('LLL')}`);
 		return { updateTeamPicks: 'success' };
 	}
 
@@ -682,7 +680,7 @@ class Team {
 
 			console.log(`Updated rankings for ${team.team.name}!`);
 		}
-		console.log(`Standings update finished @ ${moment().format('LLL')}`);
+		console.log(`Standings update finished @ ${moment().subtract(5, 'hours').format('LLL')}`);
 		return { updateStandings: 'success' };
 	}
 }

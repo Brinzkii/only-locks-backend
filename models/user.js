@@ -245,7 +245,6 @@ class User {
 				[username, playerId]
 			);
 			// If no entry found with matching username and player_id throw BadRequestError
-			console.log(checkFollowedPlayers.rows);
 			if (!checkFollowedPlayers.rows.length) {
 				throw new BadRequestError(`${username} is not following player ${playerId}`);
 				// Otherwise remove entry from followed_players table

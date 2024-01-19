@@ -233,7 +233,6 @@ class Player {
 
 		let gameStatsRes;
 		let game;
-		console.log(gameId);
 		if (gameId !== undefined) {
 			gameStatsRes = await db.query(
 				`SELECT p.id AS id, p.last_name || ', ' || p.first_name AS name, g.game_id AS "gameId", g.minutes, g.points, g.fgm, g.fga, g.fgp, g.ftm, g.fta, g.ftp, g.tpm, g.tpa, g.tpp, g.total_reb AS "totalReb", g.off_reb AS "offReb", g.def_reb AS "defReb", g.assists, g.fouls, g.steals, g.turnovers, g.blocks, g.plus_minus AS "plusMinus"
@@ -555,7 +554,7 @@ class Player {
 				}
 			}
 		}
-		console.log(`All player stats added / updated @ ${moment().format('LLL')}!`);
+		console.log(`All player stats added / updated @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 		return;
 	}
 
@@ -945,8 +944,6 @@ class Player {
 		AND g.status = 'finished'`);
 		const picks = picksRes.rows;
 
-		console.log('PICKS:', picks);
-
 		if (!picks.length) return { updatePlayerPicks: 'No eligible player picks to update yet' };
 
 		for (let pick of picks) {
@@ -956,7 +953,6 @@ class Player {
 				[pick.playerId, pick.gameId]
 			);
 			const result = resultRes.rows[0];
-			console.log(`RESULT:`, result);
 
 			if (!result) {
 				console.log(`No game stats exist for gameId: ${pick.gameId} and playerId: ${pick.playerId}`);
@@ -996,7 +992,7 @@ class Player {
 					break;
 			}
 		}
-		console.log(`All eligible player picks update finished @ ${moment().format('LLL')}`);
+		console.log(`All eligible player picks update finished @ ${moment().subtract(5, 'hours').format('LLL')}`);
 		return { updatePlayerPicks: 'success' };
 	}
 

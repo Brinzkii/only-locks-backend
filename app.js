@@ -33,7 +33,7 @@ const frequentUpdateJob = schedule.scheduleJob('0,15,30,45 0-6 * * *', async fun
 		const result = await update.frequent();
 		if (result)
 			console.log(`
-		***** REGULAR UPDATES COMPLETED AT: ${moment().format('LTS')}*****
+		***** REGULAR UPDATES COMPLETED AT: ${moment().subtract(5, 'hours').format('LTS')}*****
 		`);
 	} catch (err) {
 		console.error(err);
@@ -49,7 +49,7 @@ const hourlyUpdateJob = schedule.scheduleJob('0 0-6 * * *', async function (fire
 		const result = await update.hourly();
 		if (result) {
 			console.log(`
-		***** HOURLY UPDATES COMPLETED AT: ${moment().format('LTS')}*****
+		***** HOURLY UPDATES COMPLETED AT: ${moment().subtract(5, 'hours').format('LTS')}*****
 		`);
 		}
 	} catch (err) {
@@ -69,7 +69,7 @@ const dailyStatsUpdateJob = schedule.scheduleJob('30 7 * * *', async function (f
 		const result = await update.dailyStats();
 		if (result)
 			console.log(`
-		***** DAILY UPDATES COMPLETED AT: ${moment().format('LTS')} *****
+		***** DAILY UPDATES COMPLETED AT: ${moment().subtract(5, 'hours').format('LTS')} *****
 		`);
 	} catch (err) {
 		console.error(err);
@@ -88,7 +88,7 @@ const dailyPlayerUpdateJob = schedule.scheduleJob('0 13 * * *', async function (
 		const result = await update.dailyPlayers();
 		if (result)
 			console.log(`
-		***** PLAYER UPDATES COMPLETED AT: ${moment().format('LTS')} *****
+		***** PLAYER UPDATES COMPLETED AT: ${moment().subtract(5, 'hours').format('LTS')} *****
 		`);
 	} catch (err) {
 		console.error(err);

@@ -41,17 +41,17 @@ class Update {
 	 * picks
 	 **/
 	static async hourly() {
-		console.log(`Updating player picks (${moment().format('LLL')}) ...`);
+		console.log(`Updating player picks (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Player.updatePicks();
 
-		console.log(`Finished updating player picks @ ${moment().format('LLL')}!`);
+		console.log(`Finished updating player picks @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 
-		console.log(`Updating games (${moment().format('LLL')}) ...`);
+		console.log(`Updating games (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Team.updatePicks();
 
-		console.log(`Finished updating team picks @ ${moment().format('LLL')}!`);
+		console.log(`Finished updating team picks @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 
 		return true;
 	}
@@ -62,23 +62,25 @@ class Update {
 	 **/
 
 	static async dailyStats() {
-		console.log(`Updating team season stats (${moment().format('LLL')}) ...`);
+		console.log(`Updating team season stats (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Team.updateSeasonStats();
 
-		console.log(`Finished updating team season stats @ ${moment().format('LLL')}!`);
+		console.log(`Finished updating team season stats @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 
-		console.log(`Updating player season stats (${moment().format('LLL')}) ...`);
+		console.log(`Updating player season stats (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Player.updateSeasonStats();
 
-		console.log(`Finished updating player season stats @ ${moment().format('LLL')}!`);
+		console.log(`Finished updating player season stats @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 
-		console.log(`Updating conference and division standings (${moment().format('LLL')}) ...`);
+		console.log(`Updating conference and division standings (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Team.updateStandings();
 
-		console.log(`Finished updating conference and division standings @ ${moment().format('LLL')}!`);
+		console.log(
+			`Finished updating conference and division standings @ ${moment().subtract(5, 'hours').format('LLL')}!`
+		);
 
 		return true;
 	}
@@ -89,11 +91,11 @@ class Update {
 	 */
 
 	static async dailyPlayers() {
-		console.log(`Updating player info (${moment().format('LLL')}) ...`);
+		console.log(`Updating player info (${moment().subtract(5, 'hours').format('LLL')}) ...`);
 
 		await Player.updateInfo();
 
-		console.log(`Finished updating player info @ ${moment().format('LLL')}!`);
+		console.log(`Finished updating player info @ ${moment().subtract(5, 'hours').format('LLL')}!`);
 	}
 }
 
