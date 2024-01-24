@@ -6,14 +6,13 @@ const Player = require('./player');
 const Game = require('./game');
 
 const { BCRYPT_WORK_FACTOR } = require('../config.js');
-const e = require('cors');
 
 /** Related functions for users. */
 
 class User {
 	/** Create a user (from data), update db, return new user data.
 	 *
-	 *  Returns { username }
+	 *  Returns { username, isAdmin }
 	 *
 	 *  Throws UnauthorizedError if user not found or wrong password
 	 **/
@@ -100,7 +99,7 @@ class User {
 	 *                              wins, losses, conference, division } ]
 	 *   where followedPlayers is [ { id, name, birthday, height,
 	 *                               weight, college, number, position, team } ]
-	 * 	 Where picks is { playerPicks, teamPicks }
+	 * 	 Where picks is { playerPicks, playerPickRecord, teamPicks, teamPickRecord }
 	 *
 	 * Throws NotFoundError if user not found.
 	 **/

@@ -7,7 +7,7 @@ CREATE DATABASE only_locks;
 
 \i only-locks-schema.sql
 
-\echo 'Delete and recreate OnlyLocks_test db?'
+\echo 'Delete and recreate only_locks_test db?'
 \prompt 'Return for yes or control-C to cancel > ' foo
 
 DROP DATABASE only_locks_test;
