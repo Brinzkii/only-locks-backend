@@ -28,7 +28,7 @@ class Player {
 
 		const player = playerRes.rows[0];
 
-		if (!player) throw new NotFoundError(`No player: ${username}`);
+		if (!player) throw new NotFoundError(`No player: ${playerId}`);
 
 		return player;
 	}

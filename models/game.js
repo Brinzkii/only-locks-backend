@@ -319,7 +319,7 @@ class Game {
 	 **/
 
 	static async filter(teamId = null, date = null) {
-		if (!teamId && !date) throw new BadRequestError('Must filter by a team, player or date!');
+		if (!teamId && !date) throw new BadRequestError('Must filter by a team or date!');
 
 		let gamesRes;
 		let games;

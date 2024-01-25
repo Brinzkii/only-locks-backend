@@ -120,9 +120,227 @@ describe('get user', function () {
 /** Follow / unfollow player */
 
 describe('follow / unfollow a player', function () {
+	test('follow works', async function () {
+		await User.follow('User', 1);
+		const checkFollow = await db.query('SELECT username, player_id FROM followed_players');
+		expect(checkFollow.rows.length).toEqual(1);
+		expect(checkFollow.rows[0].username).toEqual('User');
+		expect(checkFollow.rows[0].player_id).toEqual(1);
+	});
+
+	test('bad request if already following', async function () {
+		try {
+			await User.follow('User', 1);
+			await User.follow('User', 1);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await User.follow('nope', 1);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('unfollow works', async function () {
+		await User.follow('User', 1);
+		let checkFollow = await db.query('SELECT username, player_id FROM followed_players');
+		expect(checkFollow.rows.length).toEqual(1);
+
+		await User.unfollow('User', 1);
+		checkFollow = await db.query('SELECT username, player_id FROM followed_players');
+		expect(checkFollow.rows.length).toEqual(0);
+	});
+
+	test('bad request if not following', async function () {
+		try {
+			await User.unfollow('User', 1);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await User.unfollow('nope', 1);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+});
+
+/** Follow / unfollow team */
+
+describe('follow / unfollow a team', function () {
+	test('follow works', async function () {
+		await User.follow('User', null, 1);
+		const checkFollow = await db.query('SELECT username, team_id FROM followed_teams');
+		expect(checkFollow.rows.length).toEqual(1);
+		expect(checkFollow.rows[0].username).toEqual('User');
+		expect(checkFollow.rows[0].team_id).toEqual(1);
+	});
+
+	test('bad request if already following', async function () {
+		try {
+			await User.follow('User', null, 1);
+			await User.follow('User', null, 1);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await User.follow('nope', null, 1);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('unfollow works', async function () {
+		await User.follow('User', null, 1);
+		let checkFollow = await db.query('SELECT username, team_id FROM followed_teams');
+		expect(checkFollow.rows.length).toEqual(1);
+
+		await User.unfollow('User', null, 1);
+		checkFollow = await db.query('SELECT username, team_id FROM followed_teams');
+		expect(checkFollow.rows.length).toEqual(0);
+	});
+
+	test('bad request if not following', async function () {
+		try {
+			await User.unfollow('User', null, 1);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await User.unfollow('nope', null, 1);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+});
+
+/** Player picks */
+
+describe('player pick', function () {
 	test('works', async function () {
-		// const playerId = await db.query(`SELECT id FROM players WHERE first_name = 'Jayson'`);
-		// const user = await User.follow('User', playerId.rows[0].id);
-		// expect(user.followedPlayers).toContain(playerId.rows[0].id);
+		const pick = await User.playerPick('User', 1, 2, 'points', 'over', 19.5, 100);
+		expect(pick instanceof Object).toBeTruthy();
+		expect(pick.playerId).toEqual(1);
+		expect(pick.gameId).toEqual(2);
+		expect(pick.stat).toEqual('points');
+		expect(pick.overUnder).toEqual('OVER');
+	});
+
+	test('bad request if game has happened / started', async function () {
+		try {
+			await User.playerPick('User', 1, 1, 'points', 'over', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad player', async function () {
+		try {
+			await User.playerPick('User', 5, 2, 'points', 'over', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await User.playerPick('nope', 1, 2, 'points', 'over', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad game', async function () {
+		try {
+			await User.playerPick('User', 1, 5, 'points', 'over', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('bad request for dup pick', async function () {
+		try {
+			await User.playerPick('User', 1, 2, 'points', 'over', 19.5, 100);
+			await User.playerPick('User', 1, 2, 'points', 'under', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+
+	test('bad request for invalid stat category', async function () {
+		try {
+			await User.playerPick('User', 1, 2, 'nope', 'over', 19.5, 100);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+});
+
+/** Team picks */
+
+describe('team pick', function () {
+	test('works', async function () {
+		const pick = await User.teamPick('User', 1, 2);
+		expect(pick instanceof Object).toBeTruthy();
+		expect(pick.team_id).toEqual(1);
+		expect(pick.game_id).toEqual(2);
+	});
+
+	test('not found if bad team', async function () {
+		try {
+			await await User.teamPick('User', 5, 2);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad user', async function () {
+		try {
+			await await User.teamPick('nope', 1, 2);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('not found if bad game', async function () {
+		try {
+			await await User.teamPick('User', 1, 5);
+		} catch (err) {
+			expect(err instanceof NotFoundError).toBeTruthy();
+		}
+	});
+
+	test('bad request for dup pick', async function () {
+		try {
+			await User.teamPick('User', 1, 2);
+			await User.teamPick('User', 1, 2);
+		} catch (err) {
+			expect(err instanceof BadRequestError).toBeTruthy();
+		}
+	});
+});
+
+/** Get all user picks */
+
+describe('get user picks', function () {
+	test('works', async function () {
+		await User.teamPick('User', 1, 2);
+		await User.playerPick('User', 1, 2, 'points', 'over', 19.5, 100);
+		const picks = await User.picks('User');
+		expect(picks.playerPicks.length).toEqual(1);
+		expect(picks.teamPicks.length).toEqual(1);
 	});
 });

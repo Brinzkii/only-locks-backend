@@ -9,12 +9,11 @@ const headers = {
 	'x-rapidapi-key': API_KEY || process.env.API_KEY,
 	'x-rapidapi-host': 'v2.nba.api-sports.io',
 };
-const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 /** Related functions for teams */
 
 class Team {
-	/** Given a username, check if in database and throws NotFoundError if not */
+	/** Given a teamId, check if in database and throws NotFoundError if not */
 
 	static async checkValid(teamId) {
 		const teamRes = await db.query(
