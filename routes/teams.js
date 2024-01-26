@@ -58,7 +58,7 @@ router.get('/stats', authenticateJWT, ensureLoggedIn, async function (req, res, 
 	}	
 });
 
-/** GET /stats/sort
+/** POST /stats/sort
  * 
  *  Must include stat and order in body of request
  * 
