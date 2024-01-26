@@ -18,7 +18,7 @@ const router = express.Router();
  * added can be anadmin.
  *
  * This returns the newly created user and an authentication token for
- * them:{user: { username, firstName, lastName, email, isAdmin },
+ * them:{user: { username, isAdmin },
  * token }
  *
  * Authorization required: admin
@@ -58,7 +58,7 @@ router.get('/:username', async function (req, res, next) {
 	}
 });
 
-/** POST /[username]/[playerId]  { state } => { application }
+/** POST /[username]/players/[playerId]  { state } => { application }
  *
  * Follow a player
  *
@@ -77,7 +77,7 @@ router.post('/:username/players/:playerId', ensureCorrectUser, async function (r
 	}
 });
 
-/** DELETE /[username]/[playerId]  { state } => { application }
+/** DELETE /[username]/players/[playerId]  { state } => { application }
  *
  * Unfollow a player
  *

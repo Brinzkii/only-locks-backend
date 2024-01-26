@@ -43,7 +43,6 @@ describe('get all', function () {
 describe('season stats', function () {
 	test('works', async function () {
 		const stats = await Player.sortByStats(undefined, undefined, undefined, 'season', 'points', 'desc');
-		console.log(stats);
 		expect(Object.keys(stats)).toContain('totals');
 		expect(Object.keys(stats)).toContain('per36');
 		expect(Object.keys(stats)).toContain('perGame');

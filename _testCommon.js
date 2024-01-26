@@ -14,13 +14,13 @@ async function commonBeforeAll() {
 	await User.register({ username: 'Admin', password: 'password', isAdmin: true });
 	await User.register({ username: 'User', password: 'password', isAdmin: false });
 	await db.query(
-		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (1, 'BOS', 'Celtics', 'Boston Celtics', 'Boston', 'celtics.jpg', 'east', 'atlantic') RETURNING id`
+		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (1, 'BOS', 'Celtics', 'Boston Celtics', 'Boston', 'celtics.jpg', 'east', 'atlantic')`
 	);
 	await db.query(
-		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (2, 'NYK', 'Knicks', 'New York Knicks', 'New York', 'knicks.jpg', 'east', 'atlantic') RETURNING id`
+		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (2, 'NYK', 'Knicks', 'New York Knicks', 'New York', 'knicks.jpg', 'east', 'atlantic')`
 	);
 	await db.query(
-		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (3, 'ATL', 'Hawks', 'Atlanta Hawks', 'Atlanta', 'hawks.jpg', 'east', 'atlantic') RETURNING id`
+		`INSERT INTO teams (id, code, nickname, name, city, logo, conference, division) VALUES (3, 'ATL', 'Hawks', 'Atlanta Hawks', 'Atlanta', 'hawks.jpg', 'east', 'atlantic')`
 	);
 	await db.query(`INSERT INTO conference_standings (team_id, conference, rank) VALUES ($1, $2, $3)`, [1, 'east', 1]);
 	await db.query(`INSERT INTO conference_standings (team_id, conference, rank) VALUES ($1, $2, $3)`, [2, 'east', 4]);

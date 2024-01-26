@@ -63,7 +63,7 @@ router.get('/:playerId/stats/season', authenticateJWT, ensureLoggedIn, async fun
 	}
 });
 
-/** GET /[playerId]/stats/game => { gameStats }
+/** POST /[playerId]/stats/game => { gameStats }
  *
  * 	Can pass in gameId via request body for a specific game's stats
  *
@@ -89,7 +89,7 @@ router.post('/:playerId/stats/game', authenticateJWT, ensureLoggedIn, async func
 	}
 });
 
-/** POST /stats/season/sort
+/** POST /stats/sort
  *
  *  Must include stat, time and order in body of request
  *
